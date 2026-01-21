@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. SETUP JAVA 21 (Required for 2026 Libraries)
+      # 1. SETUP JAVA 21
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -35,25 +35,33 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      # 4. THE FIX: RESOLVE KOTLIN CONFLICTS
-      # We force the entire project to agree on Kotlin 1.9.22
-      - name: Fix Android Versions & Kotlin Conflicts
+      # 4. CRITICAL FIX: INJECT PERMISSIONS MANUALLY
+      # This forces the Microphone permission into the AndroidManifest.xml
+      - name: Inject Permissions & Fix Versions
+        run: |
+          cd android/app/src/main
+          
+          # Insert RECORD_AUDIO permission right before the <application> tag
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' AndroidManifest.xml
+          
+          # Verify it worked by printing the file
+          cat AndroidManifest.xml
+
+      # 5. RESOLVE KOTLIN & GRADLE CONFLICTS (Same as before)
+      - name: Fix Android Versions
         run: |
           cd android
           
-          # Upgrade Engine (Gradle 8.11)
+          # Upgrade Engine
           cd gradle/wrapper
           sed -i 's/gradle-8.2.1-all.zip/gradle-8.11.1-all.zip/g' gradle-wrapper.properties
           cd ../..
 
-          # Upgrade Blueprint (AGP 8.7.2)
+          # Upgrade Blueprint
           sed -i 's/gradle:8.2.1/gradle:8.7.2/g' build.gradle
-
-          # Update Variable (just in case)
           sed -i 's/kotlinVersion = .*/kotlinVersion = "1.9.22"/g' variables.gradle || true
 
-          # CRITICAL FIX: Inject a "Traffic Cop" rule to force all Kotlin versions to match
-          # This prevents the "Duplicate Class" error
+          # Kotlin Traffic Cop Rule
           echo "
           allprojects {
               configurations.all {
@@ -65,14 +73,14 @@ jobs:
               }
           }" >> build.gradle
 
-      # 5. BUILD APK
+      # 6. BUILD APK
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace -Pandroid.lintOptions.abortOnError=false
 
-      # 6. UPLOAD
+      # 7. UPLOAD
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
