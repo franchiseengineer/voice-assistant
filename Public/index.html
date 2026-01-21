@@ -241,6 +241,43 @@
         .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
         .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; }
 
+        /* Fixed User Notes Area */
+        .user-notes-container {
+            margin-top: 25px;
+            width: 100%;
+            border-top: 2px dashed #ccc;
+            padding-top: 20px;
+        }
+        .user-notes-label {
+            color: #e67e22; 
+            font-weight: bold; 
+            display: block; 
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .user-notes-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e67e22;
+            border-radius: 6px;
+            min-height: 100px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        /* High Contrast History Button */
+        #viewHistoryBtn {
+            background-color: #000; 
+            color: #fff; 
+            width: 100%; 
+            padding: 15px;
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+        }
+
     </style>
 </head>
 <body>
@@ -293,9 +330,9 @@
         </div>
         <div id="fields-container"></div>
         
-        <div style="margin-top: 25px; width: 100%;">
-            <label style="color: #e67e22; font-weight: bold; display: block; margin-bottom: 8px;">User Notes</label>
-            <textarea id="manualNotes" rows="3" class="field-input" placeholder="Bingo Notes will not change this field"></textarea>
+        <div class="user-notes-container">
+            <label class="user-notes-label">User Notes</label>
+            <textarea id="manualNotes" class="user-notes-input" placeholder="Bingo Notes will not change this field"></textarea>
         </div>
     </div>
 
@@ -307,9 +344,7 @@
             <button id="clearRepoBtn" style="background: #dc3545; color: white;">🗑️ Clear All</button>
         </div>
 
-        <button id="viewHistoryBtn" style="background-color: #2c3e50; color: white; width: 100%; margin-bottom: 10px;">
-            Show Saved Notes
-        </button>
+        <button id="viewHistoryBtn">Show Saved Notes</button>
         
         <div id="historyContainer" style="display: none;">
             </div>
@@ -340,7 +375,7 @@
         // UI Elements
         const startBtn = document.getElementById('start-btn');
         const stopBtn = document.getElementById('stop-btn');
-        const reportBtn = document.getElementById('report-btn'); // Renamed from download-btn
+        const reportBtn = document.getElementById('report-btn'); 
         const clearBtn = document.getElementById('clear-btn');
         const statusLight = document.getElementById('status-light');
         const statusText = document.getElementById('status-text');
@@ -688,6 +723,9 @@
                     }
                 } catch (err) {
                     console.error("Share failed", err);
+                    // Last resort fallback
+                    try { await navigator.share({title:'Bingo Note', text:mdContent}); } 
+                    catch(e) { copyNote(id); }
                 }
             } else {
                 copyNote(id);
