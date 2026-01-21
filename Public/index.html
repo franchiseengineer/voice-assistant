@@ -272,6 +272,15 @@
         <div id="fields-container"></div>
     </div>
 
+    <div style="margin-top: 30px; border-top: 2px solid #ddd; padding-top: 20px;">
+        <h3>📚 Note Repository</h3>
+        <button id="viewHistoryBtn" style="background-color: #555; width: 100%; margin-bottom: 10px;">
+            Show Saved Notes
+        </button>
+        <div id="historyContainer" style="display: none;">
+            </div>
+    </div>
+    
     <script>
         // --- SETTINGS MANAGEMENT (Feature 3) ---
         let currentWsUrl = localStorage.getItem('voice_app_ws_url') || '';
@@ -580,6 +589,7 @@
         // --- FILE & TEMPLATE OPERATIONS ---
 // --- SMART REPORT GENERATOR (Android Compatible) ---
     async function downloadReport() {
+        saveCurrentNote();
         let reportText = `--- BINGO NOTES REPORT ---\nDate: ${new Date().toLocaleString()}\n\n`;
 
         // 1. Gather all the data from your fields
@@ -725,6 +735,102 @@
             el.addEventListener('focus', () => {
                 document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
             });
+        });
+                // --- NOTE REPOSITORY SYSTEM ---
+        
+        // 1. Save the current note to storage
+        function saveCurrentNote() {
+            const noteData = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                template: document.getElementById('templateSelect')?.value || "General",
+                fields: []
+            };
+        
+            // Capture all field data
+            document.querySelectorAll('#fieldsContainer .input-group').forEach(group => {
+                noteData.fields.push({
+                    label: group.querySelector('label').innerText,
+                    value: group.querySelector('input, textarea').value
+                });
+            });
+        
+            // Get existing notes or start empty list
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history.unshift(noteData); // Add new note to the top
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            
+            alert("Note saved to Repository!");
+            renderHistory(); // Refresh the list
+        }
+        
+        // 2. Display the repository
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = ''; // Clear current list
+        
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color:#777;">No saved notes yet.</p>';
+                return;
+            }
+        
+            history.forEach(note => {
+                const card = document.createElement('div');
+                card.style = "background: #f9f9f9; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px;";
+                
+                let contentPreview = note.fields.map(f => `<b>${f.label}:</b> ${f.value}`).join('<br>');
+                
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong>${note.template}</strong>
+                        <small>${note.date}</small>
+                    </div>
+                    <div style="font-size:0.9em; margin-bottom:10px;">${contentPreview}</div>
+                    <button onclick="deleteNote(${note.id})" style="background:#ff4444; font-size:0.8em; padding:5px 10px;">Delete</button>
+                    <button onclick="reshareNote(${note.id})" style="background:#007bff; font-size:0.8em; padding:5px 10px; margin-left:5px;">Share Again</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // 3. Delete a note
+        window.deleteNote = function(id) {
+            if(!confirm("Delete this note?")) return;
+            let history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history = history.filter(n => n.id !== id);
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            renderHistory();
+        };
+        
+        // 4. Re-share a saved note
+        window.reshareNote = async function(id) {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const note = history.find(n => n.id === id);
+            if (!note) return;
+        
+            let text = `--- SAVED NOTE ---\nDate: ${note.date}\nTemplate: ${note.template}\n\n`;
+            note.fields.forEach(f => text += `${f.label}: ${f.value}\n`);
+        
+            if (navigator.share) {
+                await navigator.share({ title: 'Saved Note', text: text });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert("Copied to clipboard");
+            }
+        };
+        
+        // Toggle History Visibility
+        document.getElementById('viewHistoryBtn').addEventListener('click', () => {
+            const container = document.getElementById('historyContainer');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                document.getElementById('viewHistoryBtn').innerText = "Hide Notes";
+                renderHistory();
+            } else {
+                container.style.display = 'none';
+                document.getElementById('viewHistoryBtn').innerText = "Show Saved Notes";
+            }
         });
     </script>
 </body>
