@@ -578,18 +578,57 @@
         }
 
         // --- FILE & TEMPLATE OPERATIONS ---
-        function downloadReport() {
-            let markdown = `# Voice Data Extraction Report\n**Generated:** ${new Date().toLocaleString()}\n\n`;
-            fields.forEach(field => { markdown += `## ${field.name}\n${field.value || '_No data captured_'}\n\n`; });
-            markdown += `## Full Transcript\n\n${fullTranscript || '_No transcript recorded_'}\n`;
-            const blob = new Blob([markdown], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `report_${Date.now()}.md`;
-            a.click();
-            URL.revokeObjectURL(url);
+// --- SMART REPORT GENERATOR (Android Compatible) ---
+    async function downloadReport() {
+        let reportText = `--- BINGO NOTES REPORT ---\nDate: ${new Date().toLocaleString()}\n\n`;
+
+        // 1. Gather all the data from your fields
+        // Note: We use the existing 'fields' array if your app already has it, 
+        // or we re-query the DOM to be safe.
+        const currentFields = document.querySelectorAll('#fieldsContainer .input-group');
+        
+        if (currentFields.length > 0) {
+             currentFields.forEach(group => {
+                const label = group.querySelector('label').innerText;
+                const value = group.querySelector('input, textarea').value;
+                if(value && value.trim() !== "") {
+                    reportText += `${label}: ${value}\n`;
+                }
+            });
+        } else if (typeof fields !== 'undefined') {
+            // Fallback to your existing 'fields' variable if the DOM query misses
+            fields.forEach(field => { 
+                reportText += `${field.name}: ${field.value || '_No data_'}\n`; 
+            });
         }
+
+        // Add Transcript if available
+        if (typeof fullTranscript !== 'undefined') {
+            reportText += `\n--- TRANSCRIPT ---\n${fullTranscript}`;
+        }
+
+        // 2. Try to open the Native Android Share Menu
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Bingo Notes Export',
+                    text: reportText,
+                });
+                console.log('Shared successfully');
+                return;
+            } catch (err) {
+                console.log('Share closed or failed:', err);
+            }
+        }
+
+        // 3. Fallback: If Share fails (or on Desktop), copy to clipboard
+        try {
+            await navigator.clipboard.writeText(reportText);
+            alert("Report copied to clipboard! (Paste it into email/slack)");
+        } catch (err) {
+            alert("Here is your report:\n\n" + reportText);
+        }
+    }
 
         function clearAll() {
             if (!confirm('Clear all data?')) return;
