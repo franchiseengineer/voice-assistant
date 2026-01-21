@@ -35,24 +35,35 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      # 4. THE FIX: SYNCHRONIZE VERSIONS
-      # We upgrade the Blueprint (AGP) to match the Engine (Gradle 8.11)
-      # And we create a rule to ignore duplicate files
-      - name: Fix Android Versions & Duplicates
+      # 4. THE FIX: RESOLVE KOTLIN CONFLICTS
+      # We force the entire project to agree on Kotlin 1.9.22
+      - name: Fix Android Versions & Kotlin Conflicts
         run: |
-          # Upgrade Gradle Wrapper to 8.11.1
-          cd android/gradle/wrapper
+          cd android
+          
+          # Upgrade Engine (Gradle 8.11)
+          cd gradle/wrapper
           sed -i 's/gradle-8.2.1-all.zip/gradle-8.11.1-all.zip/g' gradle-wrapper.properties
           cd ../..
 
-          # Upgrade Blueprint (AGP) to 8.7.2 (Matches Gradle 8.11)
+          # Upgrade Blueprint (AGP 8.7.2)
           sed -i 's/gradle:8.2.1/gradle:8.7.2/g' build.gradle
-          
-          # Upgrade Kotlin to 1.9.25 (Modern Stable)
-          sed -i 's/kotlinVersion = .*/kotlinVersion = "1.9.25"/g' variables.gradle
 
-          # Ignore Duplicates Rule (Appended to app build file)
-          echo "android { packagingOptions { resources { excludes += ['META-INF/**', '**/module-info.class'] } } }" >> app/build.gradle
+          # Update Variable (just in case)
+          sed -i 's/kotlinVersion = .*/kotlinVersion = "1.9.22"/g' variables.gradle || true
+
+          # CRITICAL FIX: Inject a "Traffic Cop" rule to force all Kotlin versions to match
+          # This prevents the "Duplicate Class" error
+          echo "
+          allprojects {
+              configurations.all {
+                  resolutionStrategy.eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.startsWith('kotlin-stdlib')) {
+                          details.useVersion '1.9.22'
+                      }
+                  }
+              }
+          }" >> build.gradle
 
       # 5. BUILD APK
       - name: Build Debug APK
