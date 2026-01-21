@@ -29,6 +29,8 @@ wss.on('connection', (ws) => {
 
     const startHeartbeat = () => {
         if (heartbeat) return;
+        console.log("Brain Heartbeat Started.");
+        
         heartbeat = setInterval(async () => {
             if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
             
@@ -41,20 +43,18 @@ wss.on('connection', (ws) => {
 
                 const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
 
-                // --- FIXED CONFIG: thinkingConfig is a sibling to generationConfig ---
+                // --- CORRECTED 2026 SYNTAX: thinkingLevel inside generationConfig ---
                 const result = await aiModel.generateContent({
                     contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }],
-                    config: {
-                        thinkingConfig: {
-                            thinkingLevel: "medium" // Balanced reasoning for 2026 workflows
-                        },
-                        generationConfig: {
-                            temperature: 1.0 // Recommended for Gemini 3 reasoning models
-                        }
+                    generationConfig: {
+                        thinkingLevel: "MEDIUM", // Use uppercase for the 2026 thinking enum
+                        temperature: 1.0,
+                        maxOutputTokens: 2048
                     }
                 });
 
                 const text = result.response.text().replace(/```json|```/g, "").trim();
+                console.log("AI SUCCESSFULLY EXTRACTED:", text);
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
@@ -71,6 +71,7 @@ wss.on('connection', (ws) => {
             encoding: "linear16", sample_rate: 16000, interim_results: false
         });
 
+        dgConnection.on(LiveTranscriptionEvents.Open, () => console.log("Deepgram Open."));
         dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript && data.is_final) {
@@ -84,16 +85,17 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         const msgStr = message.toString();
 
-        // Identifies Template commands even if they arrive as a Buffer
         if (msgStr.startsWith('updateTemplate:')) {
             activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
+            console.log("SUCCESS: Template Updated. Fields count:", activeTemplate.length);
             return;
         }
 
         if (Buffer.isBuffer(message)) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
-            // Seamless 60-minute handoff logic
+            // Seamless 60-minute handoff logic remains active
             if (sessionAge > 55 || !dgConnection) {
+                console.log(`Session Age: ${sessionAge.toFixed(1)}m. Restarting Deepgram...`);
                 if(dgConnection) dgConnection.finish();
                 setupDeepgram();
                 connectionStartTime = Date.now();
