@@ -27,8 +27,8 @@ jobs:
 
       - name: Initialize Android Platform
         run: |
-          npx cap add android
-          npx cap sync android
+          npx @capacitor/cli add android
+          npx @capacitor/cli sync android
 
       - name: Build Debug APK (Safe Mode)
         run: |
