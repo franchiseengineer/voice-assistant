@@ -11,46 +11,57 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. SETUP NODE (Standard)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 2. SETUP JAVA 21 (Required for 2026 Libraries)
+      # 1. SETUP JAVA 21 (Required for 2026 Libraries)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 3. FORCE INSTALL DEPENDENCIES
+      # 2. INSTALL DEPENDENCIES
       - name: Install Dependencies
         run: |
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      # 4. GENERATE ANDROID PROJECT (Creates the "Old" Gradle 8.2.1 files)
+      # 3. GENERATE ANDROID PROJECT
       - name: Initialize Android Platform
         run: |
           npx cap add android
           npx cap sync android
 
-      # 5. THE FIX: SURGICALLY UPGRADE GRADLE (8.2.1 -> 8.10.2)
-      # This makes the project compatible with Java 21
-      - name: Force Upgrade Gradle
+      # 4. THE FIX: SYNCHRONIZE VERSIONS
+      # We upgrade the Blueprint (AGP) to match the Engine (Gradle 8.11)
+      # And we create a rule to ignore duplicate files
+      - name: Fix Android Versions & Duplicates
         run: |
+          # Upgrade Gradle Wrapper to 8.11.1
           cd android/gradle/wrapper
-          sed -i 's/gradle-8.2.1-all.zip/gradle-8.10.2-all.zip/g' gradle-wrapper.properties
+          sed -i 's/gradle-8.2.1-all.zip/gradle-8.11.1-all.zip/g' gradle-wrapper.properties
+          cd ../..
 
-      # 6. BUILD APK (With Linting Disabled to prevent small warnings from stopping us)
+          # Upgrade Blueprint (AGP) to 8.7.2 (Matches Gradle 8.11)
+          sed -i 's/gradle:8.2.1/gradle:8.7.2/g' build.gradle
+          
+          # Upgrade Kotlin to 1.9.25 (Modern Stable)
+          sed -i 's/kotlinVersion = .*/kotlinVersion = "1.9.25"/g' variables.gradle
+
+          # Ignore Duplicates Rule (Appended to app build file)
+          echo "android { packagingOptions { resources { excludes += ['META-INF/**', '**/module-info.class'] } } }" >> app/build.gradle
+
+      # 5. BUILD APK
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace -Pandroid.lintOptions.abortOnError=false
 
-      # 7. UPLOAD
+      # 6. UPLOAD
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
