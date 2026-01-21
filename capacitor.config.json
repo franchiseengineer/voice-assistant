@@ -1,0 +1,18 @@
+{
+  "appId": "com.bingonotes.app",
+  "appName": "Bingo Notes",
+  "webDir": "Public",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "AndroidPermissions": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.INTERNET"
+      ]
+    }
+  }
+}
