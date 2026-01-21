@@ -4,6 +4,12 @@ const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const path = require('path');
+
+if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
+    console.error("FATAL ERROR: API keys are missing. Check your .env file.");
+    process.exit(1);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -22,38 +28,33 @@ wss.on('connection', (ws) => {
     let connectionStartTime = Date.now();
 
     const startHeartbeat = () => {
-        if (heartbeat) return; // Don't start twice
-        console.log("Brain Heartbeat Started.");
-        
+        if (heartbeat) return;
         heartbeat = setInterval(async () => {
-            // DEBUG: Log status to Render console
-            console.log(`Pulse Check: Transcript Length = ${slidingWindowTranscript.length}, Fields = ${activeTemplate.length}`);
-
             if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
                 const fieldInstructions = activeTemplate.map(f => `- ${f.name} (ID: ${f.id}): ${f.hint}`).join('\n');
-                
-                const ASSISTANT_PROMPT = `
-                You are a surgical data extraction engine.
-                TRANSCRIPT: "${slidingWindowTranscript}"
-                EXTRACT THESE FIELDS:
-                ${fieldInstructions}
-                Return ONLY valid JSON. If not found, use "".
-                `;
+                const ASSISTANT_PROMPT = `Extract valid JSON for these IDs: ${activeTemplate.map(f => f.id).join(', ')}. 
+                Rules: Bullets only, factual, no speaker labels. Transcript: "${slidingWindowTranscript}"`;
 
-                const aiModel = genAI.getGenerativeModel({ 
-                    model: "gemini-3-flash-preview",
-                    generationConfig: { thinkingConfig: { thinkingLevel: "medium" } }
-                }); 
+                const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
 
-                const result = await aiModel.generateContent(ASSISTANT_PROMPT);
+                // --- FIXED CONFIG: thinkingConfig is a sibling to generationConfig ---
+                const result = await aiModel.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }],
+                    config: {
+                        thinkingConfig: {
+                            thinkingLevel: "medium" // Balanced reasoning for 2026 workflows
+                        },
+                        generationConfig: {
+                            temperature: 1.0 // Recommended for Gemini 3 reasoning models
+                        }
+                    }
+                });
+
                 const text = result.response.text().replace(/```json|```/g, "").trim();
-                
-                console.log("AI SUCCESSFULLY EXTRACTED:", text);
-
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
@@ -70,7 +71,6 @@ wss.on('connection', (ws) => {
             encoding: "linear16", sample_rate: 16000, interim_results: false
         });
 
-        dgConnection.on(LiveTranscriptionEvents.Open, () => console.log("Deepgram Open."));
         dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript && data.is_final) {
@@ -84,18 +84,21 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         const msgStr = message.toString();
 
-        // 1. Check if it's a Text Command first (even if it's a Buffer)
+        // Identifies Template commands even if they arrive as a Buffer
         if (msgStr.startsWith('updateTemplate:')) {
             activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
-            console.log("SUCCESS: Template Updated. Fields count:", activeTemplate.length);
-            return; // Stop here, don't send to Deepgram
+            return;
         }
 
-        // 2. If it's NOT a command and it's a Buffer, it must be Audio
         if (Buffer.isBuffer(message)) {
-            if (!dgConnection) setupDeepgram();
-            if (!heartbeat) startHeartbeat();
-            
+            const sessionAge = (Date.now() - connectionStartTime) / 60000;
+            // Seamless 60-minute handoff logic
+            if (sessionAge > 55 || !dgConnection) {
+                if(dgConnection) dgConnection.finish();
+                setupDeepgram();
+                connectionStartTime = Date.now();
+                if (!heartbeat) startHeartbeat();
+            }
             if (dgConnection && dgConnection.getReadyState() === 1) {
                 dgConnection.send(message);
             }
@@ -110,4 +113,3 @@ wss.on('connection', (ws) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Gemini 3 Server active on port ${PORT}`));
-
