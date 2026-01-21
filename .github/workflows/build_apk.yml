@@ -16,39 +16,41 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. SETUP JAVA 21
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 2. INSTALL DEPENDENCIES
       - name: Install Dependencies
         run: |
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      # 3. GENERATE ANDROID PROJECT
+      # Clean slate: Delete any old Android folder to force a fresh start
+      - name: Clean Build Artifacts
+        run: rm -rf android
+
       - name: Initialize Android Platform
         run: |
           npx cap add android
           npx cap sync android
 
-      # 4. CRITICAL FIX: INJECT PERMISSIONS MANUALLY
-      # This forces the Microphone permission into the AndroidManifest.xml
-      - name: Inject Permissions & Fix Versions
+      # CRITICAL FIX: Inject BOTH permissions (Record + Modify Settings)
+      - name: Inject Permissions
         run: |
           cd android/app/src/main
           
-          # Insert RECORD_AUDIO permission right before the <application> tag
+          # 1. Inject RECORD_AUDIO
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' AndroidManifest.xml
           
-          # Verify it worked by printing the file
+          # 2. Inject MODIFY_AUDIO_SETTINGS (The missing link)
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' AndroidManifest.xml
+          
+          # Verify they are both there
           cat AndroidManifest.xml
 
-      # 5. RESOLVE KOTLIN & GRADLE CONFLICTS (Same as before)
-      - name: Fix Android Versions
+      - name: Fix Android Versions & Kotlin Conflicts
         run: |
           cd android
           
@@ -73,14 +75,12 @@ jobs:
               }
           }" >> build.gradle
 
-      # 6. BUILD APK
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace -Pandroid.lintOptions.abortOnError=false
 
-      # 7. UPLOAD
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
