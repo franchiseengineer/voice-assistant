@@ -17,7 +17,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // --- CLOUD FIX: Serve the 'public' folder ---
-app.use(express.static('public')); 
+app.use(express.static('Public')); 
 // -------------------------------------------
 
 // Initialize Clients
@@ -168,3 +168,4 @@ wss.on('connection', (ws) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Gemini 3 Server active on port ${PORT}`));
+
