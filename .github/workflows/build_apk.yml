@@ -11,34 +11,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 1. SETUP NODE (Standard)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      # CRITICAL FIX: Upgraded to Java 21 to match new Android dependencies
+      # 2. SETUP JAVA 21 (Required for 2026 Libraries)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install Dependencies & Android Tools
+      # 3. FORCE INSTALL DEPENDENCIES
+      - name: Install Dependencies
         run: |
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
+      # 4. GENERATE ANDROID PROJECT (Creates the "Old" Gradle 8.2.1 files)
       - name: Initialize Android Platform
         run: |
           npx cap add android
           npx cap sync android
 
+      # 5. THE FIX: SURGICALLY UPGRADE GRADLE (8.2.1 -> 8.10.2)
+      # This makes the project compatible with Java 21
+      - name: Force Upgrade Gradle
+        run: |
+          cd android/gradle/wrapper
+          sed -i 's/gradle-8.2.1-all.zip/gradle-8.10.2-all.zip/g' gradle-wrapper.properties
+
+      # 6. BUILD APK (With Linting Disabled to prevent small warnings from stopping us)
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace -Pandroid.lintOptions.abortOnError=false
 
+      # 7. UPLOAD
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
