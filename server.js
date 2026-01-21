@@ -4,7 +4,6 @@ const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const path = require('path');
 
 if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
     console.error("FATAL ERROR: API keys are missing. Check your .env file.");
@@ -38,18 +37,19 @@ wss.on('connection', (ws) => {
 
             try {
                 const fieldInstructions = activeTemplate.map(f => `- ${f.name} (ID: ${f.id}): ${f.hint}`).join('\n');
+                
+                // Prompt optimized for Gemini 3
                 const ASSISTANT_PROMPT = `Extract valid JSON for these IDs: ${activeTemplate.map(f => f.id).join(', ')}. 
                 Rules: Bullets only, factual, no speaker labels. Transcript: "${slidingWindowTranscript}"`;
 
                 const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
 
-                // --- CORRECTED 2026 SYNTAX: thinkingLevel inside generationConfig ---
+                // --- CRITICAL FIX: Removed "thinkingConfig" to use Default (High) Reasoning ---
+                // This avoids the 400 Bad Request error on older SDKs
                 const result = await aiModel.generateContent({
                     contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }],
                     generationConfig: {
-                        thinkingLevel: "MEDIUM", // Use uppercase for the 2026 thinking enum
-                        temperature: 1.0,
-                        maxOutputTokens: 2048
+                        temperature: 1.0 
                     }
                 });
 
@@ -62,7 +62,7 @@ wss.on('connection', (ws) => {
             } finally {
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
-        }, 10000); 
+        }, 10000); // 10 seconds
     };
 
     const setupDeepgram = () => {
@@ -71,7 +71,6 @@ wss.on('connection', (ws) => {
             encoding: "linear16", sample_rate: 16000, interim_results: false
         });
 
-        dgConnection.on(LiveTranscriptionEvents.Open, () => console.log("Deepgram Open."));
         dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript && data.is_final) {
@@ -85,22 +84,25 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         const msgStr = message.toString();
 
+        // 1. Handle Text Commands (Template Updates)
         if (msgStr.startsWith('updateTemplate:')) {
             activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
             console.log("SUCCESS: Template Updated. Fields count:", activeTemplate.length);
             return;
         }
 
+        // 2. Handle Audio Buffers
         if (Buffer.isBuffer(message)) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
-            // Seamless 60-minute handoff logic remains active
+            
+            // Seamless Handoff Logic
             if (sessionAge > 55 || !dgConnection) {
-                console.log(`Session Age: ${sessionAge.toFixed(1)}m. Restarting Deepgram...`);
                 if(dgConnection) dgConnection.finish();
                 setupDeepgram();
                 connectionStartTime = Date.now();
                 if (!heartbeat) startHeartbeat();
             }
+            
             if (dgConnection && dgConnection.getReadyState() === 1) {
                 dgConnection.send(message);
             }
