@@ -285,10 +285,9 @@
             </div>
     </div>
     
-    <script>
-        // --- SETTINGS MANAGEMENT (Feature 3) ---
+<script>
+        // --- SETTINGS MANAGEMENT ---
         let currentWsUrl = localStorage.getItem('voice_app_ws_url') || '';
-        
         const settingsBtn = document.getElementById('settings-btn');
         
         settingsBtn.addEventListener('click', () => {
@@ -328,14 +327,20 @@
 
         // Initialize default fields
         function initDefaultFields() {
-            addField('Name', 'Extract the person\'s full name');
-            addField('Date', 'Extract the date mentioned');
-            addField('Summary', 'Brief summary of the conversation');
+            // Only add defaults if empty to prevent duplicates on reload if persisted
+            if (fields.length === 0) {
+                addField('Name', 'Extract the person\'s full name');
+                addField('Date', 'Extract the date mentioned');
+                addField('Summary', 'Brief summary of the conversation');
+            }
         }
 
         // Field Management
         function addField(name, hint) {
             const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            // Check for duplicate ID
+            if (fields.find(f => f.id === id)) return;
+            
             fields.push({ id, name, hint, value: '', locked: false });
             renderField(id, name, hint);
             syncFieldsToServer();
@@ -464,20 +469,23 @@
             return result;
         }
 
-        // --- CAPACITOR / FOREGROUND SERVICE HELPER (Updated from 1) ---
+        // --- CAPACITOR HELPER ---
         async function checkCapacitor() {
             if (window.Capacitor && window.Capacitor.isNative) {
                 try {
                     await Capacitor.Plugins.AndroidPermissions.requestPermissions({
                         permissions: ['android.permission.RECORD_AUDIO', 'android.permission.FOREGROUND_SERVICE'] 
                     });
-                    await Capacitor.Plugins.ForegroundService.startForegroundService({
-                        id: 123,
-                        title: "Voice Extractor Active",
-                        body: "Listening for data...",
-                        smallIcon: "ic_mic", 
-                    });
-                    // Optional: keep screen on
+                    // Try/Catch specifically for ForegroundService as it depends on strict plugin setup
+                    try {
+                        await Capacitor.Plugins.ForegroundService.startForegroundService({
+                            id: 123,
+                            title: "Voice Extractor Active",
+                            body: "Listening for data...",
+                            smallIcon: "ic_mic", 
+                        });
+                    } catch (e) { console.log("Foreground service skipped"); }
+                    
                     if (Capacitor.Plugins.KeepAwake) {
                         await Capacitor.Plugins.KeepAwake.keepAwake();
                     }
@@ -489,7 +497,6 @@
 
         // --- RECORDING MAIN LOOP ---
         async function startRecording() {
-            // Check for URL before starting
             if (!currentWsUrl) {
                 alert("Please click the Gear ⚙️ icon to set your Server URL first.");
                 settingsBtn.click();
@@ -497,15 +504,11 @@
             }
 
             try {
-                // 1. Native Checks
                 await checkCapacitor(); 
-                
-                // 2. Mic Access
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
                 });
 
-                // 3. Connect Socket using Dynamic URL
                 socket = new WebSocket(currentWsUrl);
                 
                 socket.onopen = () => {
@@ -590,68 +593,71 @@
             stopBtn.disabled = true;
         }
 
-        // --- FILE & TEMPLATE OPERATIONS ---
-// --- SMART REPORT GENERATOR (Android Compatible) ---
-    async function downloadReport() {
-        saveCurrentNote();
-        let reportText = `--- BINGO NOTES REPORT ---\nDate: ${new Date().toLocaleString()}\n\n`;
+        // --- SMART REPORT GENERATOR (FIXED SELECTORS) ---
+        async function downloadReport() {
+            saveCurrentNote();
+            
+            let reportText = `--- BINGO NOTES REPORT ---\nDate: ${new Date().toLocaleString()}\n\n`;
 
-        // 1. Gather all the data from your fields
-        // Note: We use the existing 'fields' array if your app already has it, 
-        // or we re-query the DOM to be safe.
-        const currentFields = document.querySelectorAll('#fieldsContainer .input-group');
-        
-        if (currentFields.length > 0) {
-             currentFields.forEach(group => {
-                const label = group.querySelector('label').innerText;
-                const value = group.querySelector('input, textarea').value;
-                if(value && value.trim() !== "") {
-                    reportText += `${label}: ${value}\n`;
-                }
-            });
-        } else if (typeof fields !== 'undefined') {
-            // Fallback to your existing 'fields' variable if the DOM query misses
-            fields.forEach(field => { 
-                reportText += `${field.name}: ${field.value || '_No data_'}\n`; 
-            });
-        }
-        // --- NEW: Add User Manual Notes ---
-        const userNotes = document.getElementById('userManualNotes').value;
-        if (userNotes && userNotes.trim() !== "") {
-            reportText += `\n[USER NOTES]:\n${userNotes}\n`;
-        }
-        // Add Transcript if available
-        if (typeof fullTranscript !== 'undefined') {
-            reportText += `\n--- TRANSCRIPT ---\n${fullTranscript}`;
-        }
-
-        // 2. Try to open the Native Android Share Menu
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Bingo Notes Export',
-                    text: reportText,
+            // FIXED: Using correct ID (#fields-container) and class (.field-row)
+            const currentFields = document.querySelectorAll('#fields-container .field-row');
+            
+            if (currentFields.length > 0) {
+                 currentFields.forEach(group => {
+                    // FIXED: Using .field-name class for label
+                    const label = group.querySelector('.field-name').innerText;
+                    // FIXED: Using .field-input for value
+                    const value = group.querySelector('.field-input').value;
+                    
+                    if(value && value.trim() !== "") {
+                        reportText += `${label}: ${value}\n`;
+                    }
                 });
-                console.log('Shared successfully');
-                return;
+            } else if (typeof fields !== 'undefined') {
+                fields.forEach(field => { 
+                    reportText += `${field.name}: ${field.value || '_No data_'}\n`; 
+                });
+            }
+
+            // FIXED: Correct ID is 'manualNotes', not 'userManualNotes'
+            const userNotes = document.getElementById('manualNotes').value;
+            if (userNotes && userNotes.trim() !== "") {
+                reportText += `\n[USER NOTES]:\n${userNotes}\n`;
+            }
+
+            if (typeof fullTranscript !== 'undefined') {
+                reportText += `\n--- TRANSCRIPT ---\n${fullTranscript}`;
+            }
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Bingo Notes Export',
+                        text: reportText,
+                    });
+                    console.log('Shared successfully');
+                    return;
+                } catch (err) {
+                    console.log('Share closed or failed:', err);
+                }
+            }
+
+            try {
+                await navigator.clipboard.writeText(reportText);
+                alert("Report copied to clipboard!");
             } catch (err) {
-                console.log('Share closed or failed:', err);
+                alert("Here is your report:\n\n" + reportText);
             }
         }
-
-        // 3. Fallback: If Share fails (or on Desktop), copy to clipboard
-        try {
-            await navigator.clipboard.writeText(reportText);
-            alert("Report copied to clipboard! (Paste it into email/slack)");
-        } catch (err) {
-            alert("Here is your report:\n\n" + reportText);
-        }
-    }
 
         function clearAll() {
             if (!confirm('Clear all data?')) return;
             fields.forEach(f => f.value = '');
             document.querySelectorAll('.field-input').forEach(input => input.value = '');
+            // Also clear manual notes
+            const manual = document.getElementById('manualNotes');
+            if(manual) manual.value = '';
+            
             transcriptBox.textContent = 'Waiting for audio...';
             fullTranscript = '';
         }
@@ -715,6 +721,107 @@
             });
         }
 
+        // --- NOTE REPOSITORY SYSTEM (FIXED SELECTORS) ---
+        function saveCurrentNote() {
+            const noteData = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                template: document.getElementById('template-dropdown')?.value || "General",
+                fields: []
+            };
+
+            // FIXED: Using correct ID (#fields-container) and class (.field-row)
+            document.querySelectorAll('#fields-container .field-row').forEach(group => {
+                noteData.fields.push({
+                    // FIXED: Selectors to match your HTML generation
+                    label: group.querySelector('.field-name').innerText,
+                    value: group.querySelector('.field-input').value
+                });
+            });
+
+            // FIXED: Correct ID for manual notes
+            const userNotes = document.getElementById('manualNotes').value;
+            if (userNotes && userNotes.trim() !== "") {
+                noteData.fields.push({
+                    label: "📝 User Notes",
+                    value: userNotes
+                });
+            }
+
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history.unshift(noteData);
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            
+            alert("Note saved to Repository!");
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = '';
+
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color:#777;">No saved notes yet.</p>';
+                return;
+            }
+
+            history.forEach(note => {
+                const card = document.createElement('div');
+                card.style = "background: #f9f9f9; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px;";
+                
+                let contentPreview = note.fields.map(f => `<b>${f.label}:</b> ${f.value}`).join('<br>');
+                
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong>${note.template}</strong>
+                        <small>${note.date}</small>
+                    </div>
+                    <div style="font-size:0.9em; margin-bottom:10px;">${contentPreview}</div>
+                    <button onclick="deleteNote(${note.id})" style="background:#ff4444; color:white; border:none; border-radius:4px; font-size:0.8em; padding:5px 10px;">Delete</button>
+                    <button onclick="reshareNote(${note.id})" style="background:#007bff; color:white; border:none; border-radius:4px; font-size:0.8em; padding:5px 10px; margin-left:5px;">Share Again</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.deleteNote = function(id) {
+            if(!confirm("Delete this note?")) return;
+            let history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history = history.filter(n => n.id !== id);
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            renderHistory();
+        };
+
+        window.reshareNote = async function(id) {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const note = history.find(n => n.id === id);
+            if (!note) return;
+
+            let text = `--- SAVED NOTE ---\nDate: ${note.date}\nTemplate: ${note.template}\n\n`;
+            note.fields.forEach(f => text += `${f.label}: ${f.value}\n`);
+
+            if (navigator.share) {
+                await navigator.share({ title: 'Saved Note', text: text });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert("Copied to clipboard");
+            }
+        };
+
+        // Toggle History Visibility
+        document.getElementById('viewHistoryBtn').addEventListener('click', () => {
+            const container = document.getElementById('historyContainer');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                document.getElementById('viewHistoryBtn').innerText = "Hide Notes";
+                renderHistory();
+            } else {
+                container.style.display = 'none';
+                document.getElementById('viewHistoryBtn').innerText = "Show Saved Notes";
+            }
+        });
+
         // --- EVENT LISTENERS ---
         startBtn.addEventListener('click', startRecording);
         stopBtn.addEventListener('click', stopRecording);
@@ -743,109 +850,6 @@
             el.addEventListener('focus', () => {
                 document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
             });
-        });
-                // --- NOTE REPOSITORY SYSTEM ---
-        
-        // 1. Save the current note to storage
-        function saveCurrentNote() {
-            const noteData = {
-                id: Date.now(),
-                date: new Date().toLocaleString(),
-                template: document.getElementById('templateSelect')?.value || "General",
-                fields: []
-            };
-        
-            // Capture all field data
-            document.querySelectorAll('#fieldsContainer .input-group').forEach(group => {
-                noteData.fields.push({
-                    label: group.querySelector('label').innerText,
-                    value: group.querySelector('input, textarea').value
-                });
-            });
-            // --- NEW: Add User Manual Notes ---
-            const userNotes = document.getElementById('userManualNotes').value;
-            if (userNotes && userNotes.trim() !== "") {
-                noteData.fields.push({
-                    label: "📝 User Notes",
-                    value: userNotes
-                });
-            }
-            // Get existing notes or start empty list
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            history.unshift(noteData); // Add new note to the top
-            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
-            
-            alert("Note saved to Repository!");
-            renderHistory(); // Refresh the list
-        }
-        
-        // 2. Display the repository
-        function renderHistory() {
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            const container = document.getElementById('historyContainer');
-            container.innerHTML = ''; // Clear current list
-        
-            if (history.length === 0) {
-                container.innerHTML = '<p style="color:#777;">No saved notes yet.</p>';
-                return;
-            }
-        
-            history.forEach(note => {
-                const card = document.createElement('div');
-                card.style = "background: #f9f9f9; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px;";
-                
-                let contentPreview = note.fields.map(f => `<b>${f.label}:</b> ${f.value}`).join('<br>');
-                
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <strong>${note.template}</strong>
-                        <small>${note.date}</small>
-                    </div>
-                    <div style="font-size:0.9em; margin-bottom:10px;">${contentPreview}</div>
-                    <button onclick="deleteNote(${note.id})" style="background:#ff4444; font-size:0.8em; padding:5px 10px;">Delete</button>
-                    <button onclick="reshareNote(${note.id})" style="background:#007bff; font-size:0.8em; padding:5px 10px; margin-left:5px;">Share Again</button>
-                `;
-                container.appendChild(card);
-            });
-        }
-        
-        // 3. Delete a note
-        window.deleteNote = function(id) {
-            if(!confirm("Delete this note?")) return;
-            let history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            history = history.filter(n => n.id !== id);
-            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
-            renderHistory();
-        };
-        
-        // 4. Re-share a saved note
-        window.reshareNote = async function(id) {
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            const note = history.find(n => n.id === id);
-            if (!note) return;
-        
-            let text = `--- SAVED NOTE ---\nDate: ${note.date}\nTemplate: ${note.template}\n\n`;
-            note.fields.forEach(f => text += `${f.label}: ${f.value}\n`);
-        
-            if (navigator.share) {
-                await navigator.share({ title: 'Saved Note', text: text });
-            } else {
-                navigator.clipboard.writeText(text);
-                alert("Copied to clipboard");
-            }
-        };
-        
-        // Toggle History Visibility
-        document.getElementById('viewHistoryBtn').addEventListener('click', () => {
-            const container = document.getElementById('historyContainer');
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-                document.getElementById('viewHistoryBtn').innerText = "Hide Notes";
-                renderHistory();
-            } else {
-                container.style.display = 'none';
-                document.getElementById('viewHistoryBtn').innerText = "Show Saved Notes";
-            }
         });
     </script>
 </body>
