@@ -22,15 +22,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Dependencies
-        run: npm install
+      # FORCE INSTALL: We manually install the tools here to ensure they exist
+      - name: Install Dependencies & Android Tools
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Initialize Android Platform
         run: |
-          npx @capacitor/cli add android
-          npx @capacitor/cli sync android
+          npx cap add android
+          npx cap sync android
 
-      - name: Build Debug APK (Safe Mode)
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
