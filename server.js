@@ -1,55 +1,42 @@
 require('dotenv').config();
 const express = require('express');
-const http = require('http'); // Added http module for server creation
+const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
-const { GoogleGenAI } = require("@google/genai"); // UPDATED: New SDK
-const path = require('path');
+const { GoogleGenAI } = require("@google/genai"); // Modern SDK
 
-// Verify keys are loaded from .env at startup
 if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
     console.error("FATAL ERROR: API keys are missing. Check your .env file.");
     process.exit(1);
 }
 
 const app = express();
-const server = http.createServer(app); // Use http.createServer
+const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// UPDATED: Serve files from 'Public' folder for Render compatibility
-app.use(express.static('Public'));
+app.use(express.static('Public')); 
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }); // UPDATED: New Client
+const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 wss.on('connection', (ws) => {
     let dgConnection = null; 
     let activeTemplate = []; 
     let slidingWindowTranscript = ""; 
-    let knownState = {}; 
     let heartbeat = null;
     let connectionStartTime = Date.now();
 
-    const checkSessionAge = () => {
-        const ageInMinutes = (Date.now() - connectionStartTime) / 60000;
-        if (ageInMinutes > 55) {
-            console.log("Approaching 60-minute limit. Preparing seamless handoff...");
-            // Logic to trigger a new setupDeepgram() without stopping the current one
-            // Redirect incoming audio buffers to the NEW connection once ready
-            connectionStartTime = Date.now(); // Reset timer for the new connection
-        }
-    };
-
-    // Run this check every minute
-    const ageMonitor = setInterval(checkSessionAge, 60000);
-
     const startHeartbeat = () => {
+        if (heartbeat) return;
+        console.log("Gemini 3 Heartbeat Started.");
+        
         heartbeat = setInterval(async () => {
-            if (slidingWindowTranscript.trim().length < 20) return;
+            if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
+            
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
-                // --- YOUR EXACT PROMPT PRESERVED BELOW ---
+                // --- YOUR EXACT PROMPT (UNTOUCHED) ---
                 const ASSISTANT_PROMPT = `
                 You are a professional assistant creating a clean, scannable knowledge base. 
                 Your goal is to produce a clean, factual report based on the provided transcript.
@@ -72,7 +59,7 @@ wss.on('connection', (ws) => {
                 `;
                 // -----------------------------------------
 
-                // UPDATED: New SDK Call Syntax
+                // MODERN SDK CALL (GEMINI 3 NATIVE)
                 const response = await aiClient.models.generateContent({
                     model: 'gemini-3-flash-preview',
                     config: {
@@ -80,102 +67,69 @@ wss.on('connection', (ws) => {
                         generationConfig: {
                             thinkingConfig: {
                                 thinkingLevel: "MEDIUM"
-                            },
+                            }, 
                             temperature: 1.0
                         }
                     },
                     contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }]
                 });
 
-                const text = response.text();
+                const text = response.text(); 
+                console.log("Gemini 3 Success:", text);
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
-                console.error("AI Error:", err.message);
+                console.error("Gemini 3 Error:", err.message);
             } finally {
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
-        }, 8000); 
+        }, 10000); 
     };
 
     const setupDeepgram = () => {
-        // Updated syntax for Deepgram JS SDK v3
         dgConnection = deepgram.listen.live({
-                model: "nova-2",
-                language: "en-US",
-                smart_format: true,
-                diarize: true,
-                filler_words: false,
-                // MANDATORY for raw PCM from browser
-                encoding: "linear16", 
-                sample_rate: 16000,   
-                interim_results: false
-            });
-
-        // Use LiveTranscriptionEvents to ensure the handshake is complete
-        dgConnection.on(LiveTranscriptionEvents.Open, () => {
-            console.log("Deepgram connected.");
-            ws.send(JSON.stringify({ type: 'status', active: false }));
+            model: "nova-2", language: "en-US", smart_format: true, diarize: true,
+            encoding: "linear16", sample_rate: 16000, interim_results: false
         });
 
         dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
-            // Only process final results to keep the sliding window clean
             if (transcript && data.is_final) {
-                const speaker = data.channel.alternatives[0].words[0]?.speaker ?? 0;
-                const labeledText = `[Speaker ${speaker}] ${transcript}`;
-                
+                const labeledText = `[Speaker ${data.channel.alternatives[0].words[0]?.speaker ?? 0}] ${transcript}`;
                 ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
                 slidingWindowTranscript += " " + labeledText;
-                
-                if (slidingWindowTranscript.length > 8000) {
-                    slidingWindowTranscript = slidingWindowTranscript.slice(-8000);
-                }
             }
-        });
-
-        dgConnection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error("Deepgram SDK Error:", err);
-        });
-
-        dgConnection.on(LiveTranscriptionEvents.Close, () => {
-            console.log("Deepgram connection closed.");
         });
     };
 
     ws.on('message', (message) => {
         const msgStr = message.toString();
-        if (msgStr.startsWith('syncState:')) { knownState = JSON.parse(msgStr.split('syncState:')[1]); return; }
-        if (msgStr.startsWith('updateTemplate:')) { activeTemplate = JSON.parse(msgStr.split('updateTemplate:')[1]); return; }
-        if (msgStr === 'stop') {
-            if (heartbeat) clearInterval(heartbeat);
-            if (dgConnection) {
-                dgConnection.finish();
-                dgConnection = null;
-            }
+
+        if (msgStr.startsWith('updateTemplate:')) {
+            activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
+            console.log("SUCCESS: Template Updated.");
             return;
         }
 
         if (Buffer.isBuffer(message)) {
-            // PROACTIVE HANDOFF: Check if connection is > 55 mins old 
-            const sessionDuration = (Date.now() - connectionStartTime) / 60000;
-            if (sessionDuration > 55 || !dgConnection) {
-                console.log(`Session Age: ${sessionDuration.toFixed(1)}m. Initializing handoff...`);
+            const sessionAge = (Date.now() - connectionStartTime) / 60000;
+            if (sessionAge > 55 || !dgConnection) {
+                if(dgConnection) dgConnection.finish();
                 setupDeepgram();
+                connectionStartTime = Date.now();
                 if (!heartbeat) startHeartbeat();
             }
-
-            if (dgConnection && dgConnection.getReadyState() === 1 && message.length > 0) {
+            if (dgConnection && dgConnection.getReadyState() === 1) {
                 dgConnection.send(message);
             }
         }
     });
 
-    ws.on('close', () => { 
-        if (heartbeat) clearInterval(heartbeat); 
-        if (dgConnection) dgConnection.finish(); 
+    ws.on('close', () => {
+        clearInterval(heartbeat);
+        if (dgConnection) dgConnection.finish();
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Gemini 3 Server (GenAI) active on port ${PORT}`));
