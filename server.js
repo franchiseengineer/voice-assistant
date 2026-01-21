@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk"); // Use LiveTranscriptionEvents
-const { GoogleGenAI } = require("@google/genai"); 
+const { GoogleGenerativeAI } = require("@google/generative-ai"); 
 const path = require('path');
 
 // Verify keys are loaded from .env at startup
@@ -16,7 +16,7 @@ const server = require('http').createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const aiClient = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/mobile.html', (req, res) => res.sendFile(path.join(__dirname, 'mobile.html')));
@@ -170,5 +170,6 @@ wss.on('connection', (ws) => {
         if (dgConnection) dgConnection.finish(); 
     });
 });
+
 
 server.listen(3000, () => console.log('Stable Deepgram Server active at http://localhost:3000'));
