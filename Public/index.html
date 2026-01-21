@@ -24,10 +24,25 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
         h1 { 
-            margin: 0 0 15px 0; 
+            margin: 0; 
             font-size: 1.3em; 
             color: #333;
+        }
+
+        #settings-btn {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 5px;
         }
 
         /* Status Bar */
@@ -55,16 +70,16 @@
         /* Buttons */
         .btn-group {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
             margin-bottom: 15px;
         }
 
         button {
-            padding: 15px;
+            padding: 12px 8px;
             border: none;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 0.85em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -74,11 +89,7 @@
         button:active { transform: scale(0.98); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        #start-btn { 
-            background: #007bff; 
-            color: white; 
-            grid-column: 1 / -1;
-        }
+        #start-btn { background: #007bff; color: white; }
         #stop-btn { background: #6c757d; color: white; }
         #download-btn { background: #28a745; color: white; }
         #clear-btn { background: #ffc107; color: #212529; }
@@ -102,6 +113,9 @@
 
         /* Fields */
         .field-row {
+            display: grid;
+            grid-template-columns: 1fr 40px;
+            gap: 10px;
             margin-bottom: 15px;
             padding: 12px;
             background: #f8f9fa;
@@ -109,6 +123,8 @@
             border: 2px solid transparent;
             transition: border 0.3s;
         }
+        
+        .field-content { display: flex; flex-direction: column; }
 
         .field-row.updated { 
             border-color: #28a745;
@@ -127,17 +143,8 @@
             margin-bottom: 8px;
         }
 
-        .field-name {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .field-hint {
-            font-size: 0.85em;
-            color: #6c757d;
-            font-style: italic;
-            margin-bottom: 8px;
-        }
+        .field-name { font-weight: 600; color: #495057; }
+        .field-hint { font-size: 0.85em; color: #6c757d; font-style: italic; margin-bottom: 8px; }
 
         .field-input {
             width: 100%;
@@ -148,83 +155,66 @@
             font-size: 1em;
             resize: vertical;
             min-height: 60px;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
-        .field-input:focus {
-            outline: none;
-            border-color: #007bff;
-        }
+        .field-input:focus { outline: none; border-color: #007bff; }
 
         .field-actions {
             display: flex;
+            flex-direction: column;
             gap: 8px;
-            margin-top: 8px;
+            justify-content: flex-start;
         }
 
         .icon-btn {
-            flex: 1;
+            width: 40px;
+            height: 40px;
             padding: 8px;
             background: #e9ecef;
             color: #495057;
             border-radius: 6px;
-            font-size: 0.9em;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        .icon-btn.locked { background: #fff3cd; color: #856404; }
         .icon-btn.delete { background: #f8d7da; color: #721c24; }
+        .field-input.locked { background-color: #fff3cd; border-color: #ffc107; }
 
-        /* Transcript */
+        /* Transcript in Header */
         #transcript-box {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 12px;
-            min-height: 100px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 0.95em;
-            line-height: 1.6;
+            border-radius: 6px;
+            padding: 8px 12px;
+            height: 2.8em;
+            overflow: hidden; /* Essential for line-clamp */
+            font-size: 0.8em;
+            line-height: 1.4;
             color: #495057;
+            margin-bottom: 15px;
+            
+            /* Modern Standard + Legacy Support */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2; 
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
         }
 
         /* Add Field Form */
-        .add-field-form {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .add-field-form input {
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 1em;
-        }
+        .add-field-form { display: grid; gap: 10px; margin-bottom: 15px; }
+        .add-field-form input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1em; }
 
         /* Template Controls */
-        .template-controls {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .template-controls select {
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 0.95em;
-        }
-
-        .small-btn {
-            padding: 10px 15px;
-            font-size: 0.9em;
-        }
-
-        .template-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
+        .template-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 15px; }
+        .template-controls select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95em; }
+        .small-btn { padding: 10px 15px; font-size: 0.9em; }
+        .template-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         /* Utilities */
         .text-muted { color: #6c757d; font-size: 0.85em; }
@@ -233,7 +223,10 @@
 </head>
 <body>
     <div id="app-header">
-        <h1>🎙️ Voice Data Extractor</h1>
+        <div class="header-top">
+            <h1>🎙️ Voice Extractor</h1>
+            <button id="settings-btn" title="Configure Server URL">⚙️</button>
+        </div>
         
         <div id="status-bar">
             <div>
@@ -244,11 +237,13 @@
         </div>
 
         <div class="btn-group">
-            <button id="start-btn">Start Recording</button>
-            <button id="stop-btn" disabled>Stop</button>
-            <button id="download-btn">Download Report</button>
-            <button id="clear-btn">Clear All</button>
+            <button id="start-btn">▶️ Start</button>
+            <button id="stop-btn" disabled>⏹️ Stop</button>
+            <button id="download-btn">⬇️ Report</button>
+            <button id="clear-btn">🗑️ Clear</button>
         </div>
+
+        <div id="transcript-box">Waiting for audio...</div>
     </div>
 
     <div class="content-section">
@@ -277,14 +272,22 @@
         <div id="fields-container"></div>
     </div>
 
-    <div class="content-section">
-        <div class="section-title">💬 Live Transcript</div>
-        <div id="transcript-box">Waiting for audio...</div>
-    </div>
-
     <script>
-        const WS_URL = 'ws://192.168.1.120:3000'; // Your computer's IP address
+        // --- SETTINGS MANAGEMENT (Feature 3) ---
+        let currentWsUrl = localStorage.getItem('voice_app_ws_url') || '';
         
+        const settingsBtn = document.getElementById('settings-btn');
+        
+        settingsBtn.addEventListener('click', () => {
+            const newUrl = prompt("Enter Server WebSocket URL (e.g., wss://my-app.railway.app):", currentWsUrl);
+            if (newUrl && newUrl.trim()) {
+                currentWsUrl = newUrl.trim();
+                localStorage.setItem('voice_app_ws_url', currentWsUrl);
+                alert("Server URL Saved!");
+            }
+        });
+
+        // --- GLOBAL VARIABLES ---
         let socket = null;
         let audioContext = null;
         let mediaStream = null;
@@ -319,41 +322,69 @@
 
         // Field Management
         function addField(name, hint) {
-            const id = `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            fields.push({ id, name, hint, value: '' });
+            const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            fields.push({ id, name, hint, value: '', locked: false });
             renderField(id, name, hint);
             syncFieldsToServer();
         }
 
         function renderField(id, name, hint) {
+            const field = fields.find(f => f.id === id);
+            const isLocked = field?.locked || false;
+            
             const fieldDiv = document.createElement('div');
             fieldDiv.className = 'field-row';
             fieldDiv.id = id;
             fieldDiv.innerHTML = `
-                <div class="field-label">
-                    <span class="field-name">${name}</span>
+                <div class="field-content">
+                    <div class="field-label"><span class="field-name">${name}</span></div>
+                    <div class="field-hint">${hint}</div>
+                    <textarea class="field-input ${isLocked ? 'locked' : ''}" data-field-id="${id}" placeholder="Auto-populated..." oninput="autoGrowTextarea(this); updateFieldData('${id}', this.value)">${field?.value || ''}</textarea>
                 </div>
-                <div class="field-hint">${hint}</div>
-                <textarea class="field-input" data-field-id="${id}" placeholder="Auto-populated from transcript...">${fields.find(f => f.id === id)?.value || ''}</textarea>
                 <div class="field-actions">
-                    <button class="icon-btn" onclick="editField('${id}')">✏️ Edit</button>
-                    <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️ Delete</button>
+                    <button class="icon-btn ${isLocked ? 'locked' : ''}" onclick="toggleLock('${id}')">${isLocked ? '🔒' : '🔓'}</button>
+                    <button class="icon-btn" onclick="editField('${id}')">✏️</button>
+                    <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️</button>
                 </div>
             `;
             fieldsContainer.appendChild(fieldDiv);
         }
 
+        window.updateFieldData = function(id, value) {
+            const field = fields.find(f => f.id === id);
+            if (field) field.value = value;
+        };
+
+        window.autoGrowTextarea = function(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        };
+
+        window.toggleLock = function(id) {
+            const field = fields.find(f => f.id === id);
+            if (!field) return;
+            field.locked = !field.locked;
+            const fieldDiv = document.getElementById(id);
+            const lockBtn = fieldDiv.querySelector('.icon-btn');
+            const textarea = fieldDiv.querySelector('.field-input');
+            if (field.locked) {
+                lockBtn.textContent = '🔒';
+                lockBtn.classList.add('locked');
+                textarea.classList.add('locked');
+            } else {
+                lockBtn.textContent = '🔓';
+                lockBtn.classList.remove('locked');
+                textarea.classList.remove('locked');
+            }
+        };
+
         window.editField = function(id) {
             const field = fields.find(f => f.id === id);
             if (!field) return;
-            
             const newName = prompt('Edit field name:', field.name);
             const newHint = prompt('Edit extraction hint:', field.hint);
-            
             if (newName) field.name = newName;
             if (newHint) field.hint = newHint;
-            
-            // Re-render
             document.getElementById(id).remove();
             renderField(id, field.name, field.hint);
             syncFieldsToServer();
@@ -368,30 +399,27 @@
 
         function syncFieldsToServer() {
             if (socket && socket.readyState === WebSocket.OPEN) {
-                const templateData = fields.map(f => ({
-                    id: f.id,
-                    name: f.name,
-                    hint: f.hint
-                }));
+                const templateData = fields.map(f => ({ id: f.id, name: f.name, hint: f.hint }));
                 socket.send('updateTemplate:' + JSON.stringify(templateData));
             }
         }
 
         function updateFieldValue(fieldId, value) {
             const field = fields.find(f => f.id === fieldId);
-            if (!field) return;
-            
+            if (!field || field.locked) return;
             field.value = value;
             const textarea = document.querySelector(`[data-field-id="${fieldId}"]`);
             if (textarea && value && value.trim() && value !== 'null') {
                 textarea.value = value;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
                 const fieldRow = document.getElementById(fieldId);
                 fieldRow.classList.add('updated');
                 setTimeout(() => fieldRow.classList.remove('updated'), 1000);
             }
         }
 
-        // Audio Processing - Convert to PCM16 for Deepgram
+        // --- AUDIO LOGIC ---
         function convertFloat32ToPCM16(float32Array) {
             const pcm16 = new Int16Array(float32Array.length);
             for (let i = 0; i < float32Array.length; i++) {
@@ -402,9 +430,7 @@
         }
 
         function downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
-            if (inputSampleRate === outputSampleRate) {
-                return buffer;
-            }
+            if (inputSampleRate === outputSampleRate) return buffer;
             const sampleRateRatio = inputSampleRate / outputSampleRate;
             const newLength = Math.round(buffer.length / sampleRateRatio);
             const result = new Float32Array(newLength);
@@ -425,20 +451,49 @@
             return result;
         }
 
-        // Recording
+        // --- CAPACITOR / FOREGROUND SERVICE HELPER (Updated from 1) ---
+        async function checkCapacitor() {
+            if (window.Capacitor && window.Capacitor.isNative) {
+                try {
+                    await Capacitor.Plugins.AndroidPermissions.requestPermissions({
+                        permissions: ['android.permission.RECORD_AUDIO', 'android.permission.FOREGROUND_SERVICE'] 
+                    });
+                    await Capacitor.Plugins.ForegroundService.startForegroundService({
+                        id: 123,
+                        title: "Voice Extractor Active",
+                        body: "Listening for data...",
+                        smallIcon: "ic_mic", 
+                    });
+                    // Optional: keep screen on
+                    if (Capacitor.Plugins.KeepAwake) {
+                        await Capacitor.Plugins.KeepAwake.keepAwake();
+                    }
+                } catch (err) {
+                    console.warn("Native setup failed/skipped:", err);
+                }
+            }
+        }
+
+        // --- RECORDING MAIN LOOP ---
         async function startRecording() {
+            // Check for URL before starting
+            if (!currentWsUrl) {
+                alert("Please click the Gear ⚙️ icon to set your Server URL first.");
+                settingsBtn.click();
+                return;
+            }
+
             try {
-                // Request microphone access
+                // 1. Native Checks
+                await checkCapacitor(); 
+                
+                // 2. Mic Access
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    } 
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
                 });
 
-                // Connect WebSocket
-                socket = new WebSocket(WS_URL);
+                // 3. Connect Socket using Dynamic URL
+                socket = new WebSocket(currentWsUrl);
                 
                 socket.onopen = () => {
                     console.log('WebSocket connected');
@@ -447,33 +502,19 @@
                     reconnectAttempts = 0;
                     syncFieldsToServer();
                     
-                    // Set up Web Audio API for PCM16 conversion
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const source = audioContext.createMediaStreamSource(mediaStream);
-                    
-                    // Use ScriptProcessor for mobile compatibility (AudioWorklet not widely supported yet)
                     const bufferSize = 4096;
                     processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
                     
                     processor.onaudioprocess = (e) => {
                         if (socket && socket.readyState === WebSocket.OPEN) {
                             const inputData = e.inputBuffer.getChannelData(0);
-                            
-                            // Downsample to 16kHz (Deepgram requirement)
-                            const downsampled = downsampleBuffer(
-                                inputData, 
-                                audioContext.sampleRate, 
-                                16000
-                            );
-                            
-                            // Convert to PCM16
+                            const downsampled = downsampleBuffer(inputData, audioContext.sampleRate, 16000);
                             const pcm16 = convertFloat32ToPCM16(downsampled);
-                            
-                            // Send to server
                             socket.send(pcm16.buffer);
                         }
                     };
-                    
                     source.connect(processor);
                     processor.connect(audioContext.destination);
                 };
@@ -481,26 +522,18 @@
                 socket.onmessage = (event) => {
                     try {
                         const msg = JSON.parse(event.data);
-                        
                         if (msg.type === 'status') {
                             statusLight.style.background = msg.active ? '#ffc107' : '#28a745';
                             statusText.textContent = msg.active ? 'Analyzing...' : 'Recording...';
                         }
                         else if (msg.type === 'transcript') {
                             transcriptBox.textContent = msg.text;
-                            if (msg.isFinal) {
-                                fullTranscript += msg.text + '\n';
-                                transcriptBox.scrollTop = transcriptBox.scrollHeight;
-                            }
+                            if (msg.isFinal) fullTranscript += msg.text + '\n';
                         }
                         else if (msg.type === 'templateUpdate' && msg.data) {
-                            Object.keys(msg.data).forEach(key => {
-                                updateFieldValue(key, msg.data[key]);
-                            });
+                            Object.keys(msg.data).forEach(key => updateFieldValue(key, msg.data[key]));
                         }
-                    } catch (err) {
-                        console.warn('Message parse error:', err);
-                    }
+                    } catch (err) { console.warn('Message error:', err); }
                 };
 
                 socket.onerror = (error) => {
@@ -511,70 +544,44 @@
                 socket.onclose = () => {
                     console.log('WebSocket closed');
                     if (processor && mediaStream && mediaStream.active) {
-                        // Unexpected disconnect - attempt reconnect
                         if (reconnectAttempts < MAX_RECONNECT) {
                             reconnectAttempts++;
-                            setTimeout(() => {
-                                stopRecording();
-                                startRecording();
-                            }, 1000);
+                            setTimeout(() => { stopRecording(); startRecording(); }, 1000);
                         } else {
                             stopRecording();
                             alert('Connection lost. Please try again.');
                         }
                     }
                 };
-
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
-
             } catch (err) {
                 console.error('Recording error:', err);
-                alert('Microphone access denied or error: ' + err.message);
+                alert('Microphone error: ' + err.message);
                 stopRecording();
             }
         }
 
         function stopRecording() {
-            if (processor) {
-                processor.disconnect();
-                processor = null;
-            }
-            
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close();
-                audioContext = null;
-            }
-            
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
-            
+            if (processor) { processor.disconnect(); processor = null; }
+            if (audioContext && audioContext.state !== 'closed') { audioContext.close(); audioContext = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
             if (socket) {
-                if (socket.readyState === WebSocket.OPEN) {
-                    socket.send('stop');
-                }
+                if (socket.readyState === WebSocket.OPEN) socket.send('stop');
                 socket.close();
                 socket = null;
             }
-            
             statusLight.style.background = '#bbb';
             statusText.textContent = 'Ready';
             startBtn.disabled = false;
             stopBtn.disabled = true;
         }
 
-        // Download Report
+        // --- FILE & TEMPLATE OPERATIONS ---
         function downloadReport() {
             let markdown = `# Voice Data Extraction Report\n**Generated:** ${new Date().toLocaleString()}\n\n`;
-            
-            fields.forEach(field => {
-                markdown += `## ${field.name}\n${field.value || '_No data captured_'}\n\n`;
-            });
-            
+            fields.forEach(field => { markdown += `## ${field.name}\n${field.value || '_No data captured_'}\n\n`; });
             markdown += `## Full Transcript\n\n${fullTranscript || '_No transcript recorded_'}\n`;
-            
             const blob = new Blob([markdown], { type: 'text/markdown' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -586,18 +593,15 @@
 
         function clearAll() {
             if (!confirm('Clear all data?')) return;
-            
             fields.forEach(f => f.value = '');
             document.querySelectorAll('.field-input').forEach(input => input.value = '');
             transcriptBox.textContent = 'Waiting for audio...';
             fullTranscript = '';
         }
 
-        // Template Management
         function saveTemplate() {
             const name = prompt('Enter template name:');
             if (!name) return;
-            
             const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
             templates[name] = fields.map(f => ({ name: f.name, hint: f.hint }));
             localStorage.setItem('voice_templates', JSON.stringify(templates));
@@ -608,11 +612,9 @@
         function loadTemplate() {
             const name = templateDropdown.value;
             if (!name) return;
-            
             const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
             const template = templates[name];
             if (!template) return;
-            
             fields = [];
             fieldsContainer.innerHTML = '';
             template.forEach(f => addField(f.name, f.hint));
@@ -629,9 +631,21 @@
             URL.revokeObjectURL(url);
         }
 
-        function importTemplate() {
-            document.getElementById('import-file').click();
-        }
+        function importTemplate() { document.getElementById('import-file').click(); }
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const template = JSON.parse(event.target.result);
+                    fields = [];
+                    fieldsContainer.innerHTML = '';
+                    template.forEach(f => addField(f.name, f.hint));
+                } catch (err) { alert('Invalid template file'); }
+            };
+            reader.readAsText(file);
+        });
 
         function updateTemplateDropdown() {
             const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
@@ -644,7 +658,7 @@
             });
         }
 
-        // Event Listeners
+        // --- EVENT LISTENERS ---
         startBtn.addEventListener('click', startRecording);
         stopBtn.addEventListener('click', stopRecording);
         downloadBtn.addEventListener('click', downloadReport);
@@ -663,33 +677,14 @@
         document.getElementById('load-template-btn').addEventListener('click', loadTemplate);
         document.getElementById('export-template-btn').addEventListener('click', exportTemplate);
         document.getElementById('import-template-btn').addEventListener('click', importTemplate);
-        document.getElementById('import-file').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const template = JSON.parse(event.target.result);
-                    fields = [];
-                    fieldsContainer.innerHTML = '';
-                    template.forEach(f => addField(f.name, f.hint));
-                } catch (err) {
-                    alert('Invalid template file');
-                }
-            };
-            reader.readAsText(file);
-        });
 
-        // Initialize
         initDefaultFields();
         updateTemplateDropdown();
 
-        // Prevent mobile zoom on input focus
+        // Prevent mobile zoom
         document.querySelectorAll('input, textarea, select').forEach(el => {
             el.addEventListener('focus', () => {
-                document.querySelector('meta[name=viewport]').setAttribute('content', 
-                    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
             });
         });
     </script>
