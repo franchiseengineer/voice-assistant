@@ -270,6 +270,10 @@
             <button id="add-field-btn">+ Add Field</button>
         </div>
         <div id="fields-container"></div>
+        <div class="input-group" style="margin-top: 15px; border-left: 4px solid #f39c12; padding-left: 10px;">
+            <label style="color: #e67e22; font-weight: bold;">📝 User Notes (Manual Only)</label>
+            <textarea id="manualNotes" rows="3" placeholder="Gemini will never change this field..."></textarea>
+        </div>
     </div>
 
     <div style="margin-top: 30px; border-top: 2px solid #ddd; padding-top: 20px;">
@@ -611,7 +615,11 @@
                 reportText += `${field.name}: ${field.value || '_No data_'}\n`; 
             });
         }
-
+        // --- NEW: Add User Manual Notes ---
+        const userNotes = document.getElementById('userManualNotes').value;
+        if (userNotes && userNotes.trim() !== "") {
+            reportText += `\n[USER NOTES]:\n${userNotes}\n`;
+        }
         // Add Transcript if available
         if (typeof fullTranscript !== 'undefined') {
             reportText += `\n--- TRANSCRIPT ---\n${fullTranscript}`;
@@ -754,7 +762,14 @@
                     value: group.querySelector('input, textarea').value
                 });
             });
-        
+            // --- NEW: Add User Manual Notes ---
+            const userNotes = document.getElementById('userManualNotes').value;
+            if (userNotes && userNotes.trim() !== "") {
+                noteData.fields.push({
+                    label: "📝 User Notes",
+                    value: userNotes
+                });
+            }
             // Get existing notes or start empty list
             const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
             history.unshift(noteData); // Add new note to the top
