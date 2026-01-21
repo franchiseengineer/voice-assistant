@@ -59,7 +59,6 @@ wss.on('connection', (ws) => {
                 `;
                 // -----------------------------------------
 
-                // MODERN SDK CALL (GEMINI 3 NATIVE)
                 const response = await aiClient.models.generateContent({
                     model: 'gemini-3-flash-preview',
                     config: {
@@ -74,7 +73,14 @@ wss.on('connection', (ws) => {
                     contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }]
                 });
 
-                const text = response.text(); 
+                // --- CRITICAL FIX: Extract text manually (fixes "is not a function" error) ---
+                // The new SDK stores the answer here:
+                let text = "";
+                if (response.candidates && response.candidates[0].content.parts[0].text) {
+                     text = response.candidates[0].content.parts[0].text;
+                }
+                // --------------------------------------------------------------------------
+
                 console.log("Gemini 3 Success:", text);
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
