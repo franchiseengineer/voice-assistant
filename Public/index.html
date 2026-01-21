@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Data Extractor</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #f5f5f5;
+            touch-action: manipulation;
+        }
+
+        /* Sticky Header */
+        #app-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #fff;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 { 
+            margin: 0 0 15px 0; 
+            font-size: 1.3em; 
+            color: #333;
+        }
+
+        /* Status Bar */
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        #status-light {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #bbb;
+            margin-right: 8px;
+            transition: background 0.3s;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #start-btn { 
+            background: #007bff; 
+            color: white; 
+            grid-column: 1 / -1;
+        }
+        #stop-btn { background: #6c757d; color: white; }
+        #download-btn { background: #28a745; color: white; }
+        #clear-btn { background: #ffc107; color: #212529; }
+        #add-field-btn { background: #17a2b8; color: white; }
+
+        /* Content Areas */
+        .content-section {
+            background: white;
+            margin: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        /* Fields */
+        .field-row {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: border 0.3s;
+        }
+
+        .field-row.updated { 
+            border-color: #28a745;
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background: #f8f9fa; }
+            50% { background: #d4edda; }
+        }
+
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .field-hint {
+            font-size: 0.85em;
+            color: #6c757d;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .field-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .icon-btn {
+            flex: 1;
+            padding: 8px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .icon-btn.delete { background: #f8d7da; color: #721c24; }
+
+        /* Transcript */
+        #transcript-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        /* Add Field Form */
+        .add-field-form {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .add-field-form input {
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        /* Template Controls */
+        .template-controls {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .template-controls select {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .small-btn {
+            padding: 10px 15px;
+            font-size: 0.9em;
+        }
+
+        .template-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Utilities */
+        .text-muted { color: #6c757d; font-size: 0.85em; }
+        .mb-2 { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div id="app-header">
+        <h1>🎙️ Voice Data Extractor</h1>
+        
+        <div id="status-bar">
+            <div>
+                <span id="status-light"></span>
+                <span id="status-text">Ready</span>
+            </div>
+            <div id="source-display" style="font-weight: 600; color: #007bff;">Microphone</div>
+        </div>
+
+        <div class="btn-group">
+            <button id="start-btn">Start Recording</button>
+            <button id="stop-btn" disabled>Stop</button>
+            <button id="download-btn">Download Report</button>
+            <button id="clear-btn">Clear All</button>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <div class="section-title">📋 Templates</div>
+        <div class="template-controls">
+            <select id="template-dropdown">
+                <option value="">-- Select Template --</option>
+            </select>
+            <button class="small-btn" id="load-template-btn" style="background: #007bff; color: white;">Load</button>
+            <button class="small-btn" id="save-template-btn" style="background: #28a745; color: white;">Save</button>
+        </div>
+        <div class="template-actions">
+            <button class="small-btn" id="export-template-btn" style="background: #6c757d; color: white;">Export</button>
+            <button class="small-btn" id="import-template-btn" style="background: #6c757d; color: white;">Import</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display: none;">
+    </div>
+
+    <div class="content-section">
+        <div class="section-title">📝 Data Fields</div>
+        <div class="add-field-form">
+            <input type="text" id="field-name-input" placeholder="Field Name (e.g., Name, Date)">
+            <input type="text" id="field-hint-input" placeholder="Extraction Hint (e.g., Extract full name)">
+            <button id="add-field-btn">+ Add Field</button>
+        </div>
+        <div id="fields-container"></div>
+    </div>
+
+    <div class="content-section">
+        <div class="section-title">💬 Live Transcript</div>
+        <div id="transcript-box">Waiting for audio...</div>
+    </div>
+
+    <script>
+        const WS_URL = 'ws://192.168.1.120:3000'; // Your computer's IP address
+        
+        let socket = null;
+        let audioContext = null;
+        let mediaStream = null;
+        let processor = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT = 3;
+
+        // UI Elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const statusLight = document.getElementById('status-light');
+        const statusText = document.getElementById('status-text');
+        const transcriptBox = document.getElementById('transcript-box');
+        const fieldsContainer = document.getElementById('fields-container');
+        const addFieldBtn = document.getElementById('add-field-btn');
+        const fieldNameInput = document.getElementById('field-name-input');
+        const fieldHintInput = document.getElementById('field-hint-input');
+        const templateDropdown = document.getElementById('template-dropdown');
+
+        // State
+        let fields = [];
+        let fullTranscript = '';
+
+        // Initialize default fields
+        function initDefaultFields() {
+            addField('Name', 'Extract the person\'s full name');
+            addField('Date', 'Extract the date mentioned');
+            addField('Summary', 'Brief summary of the conversation');
+        }
+
+        // Field Management
+        function addField(name, hint) {
+            const id = `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            fields.push({ id, name, hint, value: '' });
+            renderField(id, name, hint);
+            syncFieldsToServer();
+        }
+
+        function renderField(id, name, hint) {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'field-row';
+            fieldDiv.id = id;
+            fieldDiv.innerHTML = `
+                <div class="field-label">
+                    <span class="field-name">${name}</span>
+                </div>
+                <div class="field-hint">${hint}</div>
+                <textarea class="field-input" data-field-id="${id}" placeholder="Auto-populated from transcript...">${fields.find(f => f.id === id)?.value || ''}</textarea>
+                <div class="field-actions">
+                    <button class="icon-btn" onclick="editField('${id}')">✏️ Edit</button>
+                    <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️ Delete</button>
+                </div>
+            `;
+            fieldsContainer.appendChild(fieldDiv);
+        }
+
+        window.editField = function(id) {
+            const field = fields.find(f => f.id === id);
+            if (!field) return;
+            
+            const newName = prompt('Edit field name:', field.name);
+            const newHint = prompt('Edit extraction hint:', field.hint);
+            
+            if (newName) field.name = newName;
+            if (newHint) field.hint = newHint;
+            
+            // Re-render
+            document.getElementById(id).remove();
+            renderField(id, field.name, field.hint);
+            syncFieldsToServer();
+        };
+
+        window.deleteField = function(id) {
+            if (!confirm('Delete this field?')) return;
+            fields = fields.filter(f => f.id !== id);
+            document.getElementById(id).remove();
+            syncFieldsToServer();
+        };
+
+        function syncFieldsToServer() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const templateData = fields.map(f => ({
+                    id: f.id,
+                    name: f.name,
+                    hint: f.hint
+                }));
+                socket.send('updateTemplate:' + JSON.stringify(templateData));
+            }
+        }
+
+        function updateFieldValue(fieldId, value) {
+            const field = fields.find(f => f.id === fieldId);
+            if (!field) return;
+            
+            field.value = value;
+            const textarea = document.querySelector(`[data-field-id="${fieldId}"]`);
+            if (textarea && value && value.trim() && value !== 'null') {
+                textarea.value = value;
+                const fieldRow = document.getElementById(fieldId);
+                fieldRow.classList.add('updated');
+                setTimeout(() => fieldRow.classList.remove('updated'), 1000);
+            }
+        }
+
+        // Audio Processing - Convert to PCM16 for Deepgram
+        function convertFloat32ToPCM16(float32Array) {
+            const pcm16 = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm16;
+        }
+
+        function downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
+            if (inputSampleRate === outputSampleRate) {
+                return buffer;
+            }
+            const sampleRateRatio = inputSampleRate / outputSampleRate;
+            const newLength = Math.round(buffer.length / sampleRateRatio);
+            const result = new Float32Array(newLength);
+            let offsetResult = 0;
+            let offsetBuffer = 0;
+            while (offsetResult < result.length) {
+                const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+                let accum = 0;
+                let count = 0;
+                for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+                    accum += buffer[i];
+                    count++;
+                }
+                result[offsetResult] = accum / count;
+                offsetResult++;
+                offsetBuffer = nextOffsetBuffer;
+            }
+            return result;
+        }
+
+        // Recording
+        async function startRecording() {
+            try {
+                // Request microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+
+                // Connect WebSocket
+                socket = new WebSocket(WS_URL);
+                
+                socket.onopen = () => {
+                    console.log('WebSocket connected');
+                    statusLight.style.background = '#28a745';
+                    statusText.textContent = 'Recording...';
+                    reconnectAttempts = 0;
+                    syncFieldsToServer();
+                    
+                    // Set up Web Audio API for PCM16 conversion
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(mediaStream);
+                    
+                    // Use ScriptProcessor for mobile compatibility (AudioWorklet not widely supported yet)
+                    const bufferSize = 4096;
+                    processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+                    
+                    processor.onaudioprocess = (e) => {
+                        if (socket && socket.readyState === WebSocket.OPEN) {
+                            const inputData = e.inputBuffer.getChannelData(0);
+                            
+                            // Downsample to 16kHz (Deepgram requirement)
+                            const downsampled = downsampleBuffer(
+                                inputData, 
+                                audioContext.sampleRate, 
+                                16000
+                            );
+                            
+                            // Convert to PCM16
+                            const pcm16 = convertFloat32ToPCM16(downsampled);
+                            
+                            // Send to server
+                            socket.send(pcm16.buffer);
+                        }
+                    };
+                    
+                    source.connect(processor);
+                    processor.connect(audioContext.destination);
+                };
+
+                socket.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        
+                        if (msg.type === 'status') {
+                            statusLight.style.background = msg.active ? '#ffc107' : '#28a745';
+                            statusText.textContent = msg.active ? 'Analyzing...' : 'Recording...';
+                        }
+                        else if (msg.type === 'transcript') {
+                            transcriptBox.textContent = msg.text;
+                            if (msg.isFinal) {
+                                fullTranscript += msg.text + '\n';
+                                transcriptBox.scrollTop = transcriptBox.scrollHeight;
+                            }
+                        }
+                        else if (msg.type === 'templateUpdate' && msg.data) {
+                            Object.keys(msg.data).forEach(key => {
+                                updateFieldValue(key, msg.data[key]);
+                            });
+                        }
+                    } catch (err) {
+                        console.warn('Message parse error:', err);
+                    }
+                };
+
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    statusText.textContent = 'Connection error';
+                };
+
+                socket.onclose = () => {
+                    console.log('WebSocket closed');
+                    if (processor && mediaStream && mediaStream.active) {
+                        // Unexpected disconnect - attempt reconnect
+                        if (reconnectAttempts < MAX_RECONNECT) {
+                            reconnectAttempts++;
+                            setTimeout(() => {
+                                stopRecording();
+                                startRecording();
+                            }, 1000);
+                        } else {
+                            stopRecording();
+                            alert('Connection lost. Please try again.');
+                        }
+                    }
+                };
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+            } catch (err) {
+                console.error('Recording error:', err);
+                alert('Microphone access denied or error: ' + err.message);
+                stopRecording();
+            }
+        }
+
+        function stopRecording() {
+            if (processor) {
+                processor.disconnect();
+                processor = null;
+            }
+            
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+                audioContext = null;
+            }
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            if (socket) {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send('stop');
+                }
+                socket.close();
+                socket = null;
+            }
+            
+            statusLight.style.background = '#bbb';
+            statusText.textContent = 'Ready';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // Download Report
+        function downloadReport() {
+            let markdown = `# Voice Data Extraction Report\n**Generated:** ${new Date().toLocaleString()}\n\n`;
+            
+            fields.forEach(field => {
+                markdown += `## ${field.name}\n${field.value || '_No data captured_'}\n\n`;
+            });
+            
+            markdown += `## Full Transcript\n\n${fullTranscript || '_No transcript recorded_'}\n`;
+            
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report_${Date.now()}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAll() {
+            if (!confirm('Clear all data?')) return;
+            
+            fields.forEach(f => f.value = '');
+            document.querySelectorAll('.field-input').forEach(input => input.value = '');
+            transcriptBox.textContent = 'Waiting for audio...';
+            fullTranscript = '';
+        }
+
+        // Template Management
+        function saveTemplate() {
+            const name = prompt('Enter template name:');
+            if (!name) return;
+            
+            const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
+            templates[name] = fields.map(f => ({ name: f.name, hint: f.hint }));
+            localStorage.setItem('voice_templates', JSON.stringify(templates));
+            updateTemplateDropdown();
+            alert('Template saved!');
+        }
+
+        function loadTemplate() {
+            const name = templateDropdown.value;
+            if (!name) return;
+            
+            const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
+            const template = templates[name];
+            if (!template) return;
+            
+            fields = [];
+            fieldsContainer.innerHTML = '';
+            template.forEach(f => addField(f.name, f.hint));
+        }
+
+        function exportTemplate() {
+            const data = JSON.stringify(fields.map(f => ({ name: f.name, hint: f.hint })), null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importTemplate() {
+            document.getElementById('import-file').click();
+        }
+
+        function updateTemplateDropdown() {
+            const templates = JSON.parse(localStorage.getItem('voice_templates') || '{}');
+            templateDropdown.innerHTML = '<option value="">-- Select Template --</option>';
+            Object.keys(templates).forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                templateDropdown.appendChild(option);
+            });
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+        downloadBtn.addEventListener('click', downloadReport);
+        clearBtn.addEventListener('click', clearAll);
+        addFieldBtn.addEventListener('click', () => {
+            const name = fieldNameInput.value.trim();
+            const hint = fieldHintInput.value.trim() || 'Extract relevant information';
+            if (name) {
+                addField(name, hint);
+                fieldNameInput.value = '';
+                fieldHintInput.value = '';
+            }
+        });
+
+        document.getElementById('save-template-btn').addEventListener('click', saveTemplate);
+        document.getElementById('load-template-btn').addEventListener('click', loadTemplate);
+        document.getElementById('export-template-btn').addEventListener('click', exportTemplate);
+        document.getElementById('import-template-btn').addEventListener('click', importTemplate);
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const template = JSON.parse(event.target.result);
+                    fields = [];
+                    fieldsContainer.innerHTML = '';
+                    template.forEach(f => addField(f.name, f.hint));
+                } catch (err) {
+                    alert('Invalid template file');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Initialize
+        initDefaultFields();
+        updateTemplateDropdown();
+
+        // Prevent mobile zoom on input focus
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.addEventListener('focus', () => {
+                document.querySelector('meta[name=viewport]').setAttribute('content', 
+                    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            });
+        });
+    </script>
+</body>
+</html>
