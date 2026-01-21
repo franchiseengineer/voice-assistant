@@ -82,19 +82,22 @@ wss.on('connection', (ws) => {
     };
 
     ws.on('message', (message) => {
+        const msgStr = message.toString();
+
+        // 1. Check if it's a Text Command first (even if it's a Buffer)
+        if (msgStr.startsWith('updateTemplate:')) {
+            activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
+            console.log("SUCCESS: Template Updated. Fields count:", activeTemplate.length);
+            return; // Stop here, don't send to Deepgram
+        }
+
+        // 2. If it's NOT a command and it's a Buffer, it must be Audio
         if (Buffer.isBuffer(message)) {
-            // FIX: Ensure BOTH are running whenever audio is flowing
             if (!dgConnection) setupDeepgram();
             if (!heartbeat) startHeartbeat();
             
             if (dgConnection && dgConnection.getReadyState() === 1) {
                 dgConnection.send(message);
-            }
-        } else {
-            const msgStr = message.toString();
-            if (msgStr.startsWith('updateTemplate:')) {
-                activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
-                console.log("Template Updated via Phone.");
             }
         }
     });
@@ -107,3 +110,4 @@ wss.on('connection', (ws) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Gemini 3 Server active on port ${PORT}`));
+
