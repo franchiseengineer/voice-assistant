@@ -8,77 +8,275 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            margin: 0; padding: 0; background: #f5f5f5; touch-action: manipulation;
+            margin: 0; 
+            padding: 0; 
+            background: #f5f5f5;
+            touch-action: manipulation;
         }
 
         /* Sticky Header */
         #app-header {
-            position: sticky; top: 0; z-index: 1000; background: #fff;
-            padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #fff;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        h1 { margin: 0; font-size: 1.3em; color: #333; }
-        #settings-btn { background: none; border: none; font-size: 1.4em; padding: 5px; }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        h1 { 
+            margin: 0; 
+            font-size: 1.3em; 
+            color: #333;
+        }
+
+        #settings-btn {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 5px;
+        }
 
         /* Status Bar */
         #status-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
         }
-        #status-light { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #bbb; margin-right: 8px; }
+
+        #status-light {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #bbb;
+            margin-right: 8px;
+            transition: background 0.3s;
+        }
 
         /* Buttons */
-        .btn-group { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        button {
-            padding: 12px 8px; border: none; border-radius: 8px; font-size: 0.85em; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; touch-action: manipulation;
+        .btn-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
         }
+
+        button {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
         button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.5; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         #start-btn { background: #007bff; color: white; }
         #stop-btn { background: #6c757d; color: white; }
-        #report-btn { background: #28a745; color: white; } 
+        #report-btn { background: #28a745; color: white; }
         #clear-btn { background: #ffc107; color: #212529; }
         #add-field-btn { background: #17a2b8; color: white; }
 
         /* Content Areas */
-        .content-section { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
-        .section-title { font-size: 1.1em; font-weight: 600; margin-bottom: 12px; color: #333; }
-
-        /* Fields */
-        .field-row { display: grid; grid-template-columns: 1fr 40px; gap: 10px; margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
-        .field-row.updated { border: 2px solid #28a745; animation: pulse 0.5s; }
-        @keyframes pulse { 0%, 100% { background: #f8f9fa; } 50% { background: #d4edda; } }
-
-        .field-label { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .field-name { font-weight: 600; color: #495057; }
-        .field-hint { font-size: 0.85em; color: #6c757d; font-style: italic; }
-        .field-input { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1em; resize: vertical; min-height: 60px; }
-        .field-actions { display: flex; flex-direction: column; gap: 8px; }
-        .icon-btn { width: 40px; height: 40px; background: #e9ecef; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
-        .icon-btn.locked { background: #fff3cd; color: #856404; }
-
-        /* Transcript */
-        #transcript-box {
-            background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px;
-            height: 2.8em; overflow: hidden; font-size: 0.8em; line-height: 1.4; color: #495057; margin-bottom: 15px;
-            display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+        .content-section {
+            background: white;
+            margin: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
 
-        /* User Notes */
-        .user-notes-container { margin-top: 25px; width: 100%; border-top: 2px dashed #ccc; padding-top: 20px; }
-        .user-notes-label { color: #e67e22; font-weight: bold; display: block; margin-bottom: 8px; font-size: 1.1em; }
-        .user-notes-input { width: 100%; padding: 12px; border: 2px solid #e67e22; border-radius: 6px; min-height: 100px; font-family: inherit; }
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
 
-        /* Repository */
-        #repo-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .note-card { background: #fff; border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
-        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; max-height: 120px; overflow: hidden; text-overflow: ellipsis; }
+        /* Fields */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 40px;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: border 0.3s;
+        }
+        
+        .field-content { display: flex; flex-direction: column; }
+
+        .field-row.updated { 
+            border-color: #28a745;
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background: #f8f9fa; }
+            50% { background: #d4edda; }
+        }
+
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .field-name { font-weight: 600; color: #495057; }
+        .field-hint { font-size: 0.85em; color: #6c757d; font-style: italic; margin-bottom: 8px; }
+
+        .field-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            min-height: 60px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .field-input:focus { outline: none; border-color: #007bff; }
+
+        .field-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 6px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn.locked { background: #fff3cd; color: #856404; }
+        .icon-btn.delete { background: #f8d7da; color: #721c24; }
+        .field-input.locked { background-color: #fff3cd; border-color: #ffc107; }
+
+        /* Transcript in Header */
+        #transcript-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px 12px;
+            height: 2.8em;
+            overflow: hidden; 
+            font-size: 0.8em;
+            line-height: 1.4;
+            color: #495057;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2; 
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+        }
+
+        /* Add Field Form */
+        .add-field-form { display: grid; gap: 10px; margin-bottom: 15px; }
+        .add-field-form input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1em; }
+
+        /* Template Controls */
+        .template-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 15px; }
+        .template-controls select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95em; }
+        .small-btn { padding: 10px 15px; font-size: 0.9em; }
+        .template-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* Repository Styles */
+        #repo-controls {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-bottom: 15px;
+        }
+        .note-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; }
         .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .note-btn { font-size: 0.8em; padding: 8px; border-radius: 4px; border: none; color: white; font-weight: bold; }
-        #viewHistoryBtn { background-color: #000; color: #fff; width: 100%; padding: 15px; font-size: 1em; font-weight: bold; margin-bottom: 10px; border-radius: 8px; }
+        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; }
+
+        /* Fixed User Notes Area (Full Width) */
+        .user-notes-container {
+            margin-top: 25px;
+            width: 100%;
+            border-top: 2px dashed #ccc;
+            padding-top: 20px;
+        }
+        .user-notes-label {
+            color: #e67e22; 
+            font-weight: bold; 
+            display: block; 
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .user-notes-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e67e22;
+            border-radius: 6px;
+            min-height: 100px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        /* High Contrast History Button */
+        #viewHistoryBtn {
+            background-color: #000; 
+            color: #fff; 
+            width: 100%; 
+            padding: 15px;
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+        }
 
     </style>
 </head>
@@ -86,12 +284,15 @@
     <div id="app-header">
         <div class="header-top">
             <h1>🎙️ Bingo Notes</h1>
-            <button id="settings-btn">⚙️</button>
+            <button id="settings-btn" title="Configure Server URL">⚙️</button>
         </div>
         
         <div id="status-bar">
-            <div><span id="status-light"></span><span id="status-text">Ready</span></div>
-            <div style="font-weight: 600; color: #007bff;">Microphone</div>
+            <div>
+                <span id="status-light"></span>
+                <span id="status-text">Ready</span>
+            </div>
+            <div id="source-display" style="font-weight: 600; color: #007bff;">Microphone</div>
         </div>
 
         <div class="btn-group">
@@ -106,18 +307,25 @@
 
     <div class="content-section">
         <div class="section-title">📋 Templates</div>
-        <div style="display:grid; grid-template-columns: 1fr auto auto; gap:8px;">
-            <select id="template-dropdown" style="padding:10px;"><option value="">-- Select Template --</option></select>
-            <button id="load-template-btn" style="background:#007bff; color:white;">Load</button>
-            <button id="save-template-btn" style="background:#28a745; color:white;">Save</button>
+        <div class="template-controls">
+            <select id="template-dropdown">
+                <option value="">-- Select Template --</option>
+            </select>
+            <button class="small-btn" id="load-template-btn" style="background: #007bff; color: white;">Load</button>
+            <button class="small-btn" id="save-template-btn" style="background: #28a745; color: white;">Save</button>
         </div>
+        <div class="template-actions">
+            <button class="small-btn" id="export-template-btn" style="background: #6c757d; color: white;">Export</button>
+            <button class="small-btn" id="import-template-btn" style="background: #6c757d; color: white;">Import</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display: none;">
     </div>
 
     <div class="content-section">
         <div class="section-title">📝 Data Fields</div>
-        <div style="display:grid; gap:10px; margin-bottom:15px;">
-            <input type="text" id="field-name-input" placeholder="Field Name" style="padding:10px;">
-            <input type="text" id="field-hint-input" placeholder="Hint" style="padding:10px;">
+        <div class="add-field-form">
+            <input type="text" id="field-name-input" placeholder="Field Name (e.g., Name, Date)">
+            <input type="text" id="field-hint-input" placeholder="Extraction Hint (e.g., Extract full name)">
             <button id="add-field-btn">+ Add Field</button>
         </div>
         <div id="fields-container"></div>
@@ -130,65 +338,141 @@
 
     <div class="content-section" style="border-top: 4px solid #333;">
         <h3>📚 Note Repository</h3>
+        
         <div id="repo-controls">
             <button id="shareAllBtn" style="background: #17a2b8; color: white;">📤 Share All</button>
             <button id="clearRepoBtn" style="background: #dc3545; color: white;">🗑️ Clear All</button>
         </div>
+
         <button id="viewHistoryBtn">Show Saved Notes</button>
-        <div id="historyContainer" style="display: none;"></div>
+        
+        <div id="historyContainer" style="display: none;">
+            </div>
     </div>
     
     <script>
-        // --- CONFIG ---
+        // --- SETTINGS & HARDCODED URL ---
         let currentWsUrl = localStorage.getItem('voice_app_ws_url') || 'wss://voice-assistant-4plp.onrender.com';
-        document.getElementById('settings-btn').addEventListener('click', () => {
-            const url = prompt("Server URL:", currentWsUrl);
-            if(url) { localStorage.setItem('voice_app_ws_url', url.trim()); currentWsUrl = url.trim(); }
+        
+        const settingsBtn = document.getElementById('settings-btn');
+        settingsBtn.addEventListener('click', () => {
+            const newUrl = prompt("Enter Server WebSocket URL:", currentWsUrl);
+            if (newUrl && newUrl.trim()) {
+                currentWsUrl = newUrl.trim();
+                localStorage.setItem('voice_app_ws_url', currentWsUrl);
+                alert("Server URL Saved!");
+            }
         });
 
-        // --- GLOBAL VARS ---
-        let socket, audioContext, mediaStream, processor;
-        let fields = [], fullTranscript = '';
-        const fieldsContainer = document.getElementById('fields-container');
-        const statusLight = document.getElementById('status-light');
-        const transcriptBox = document.getElementById('transcript-box');
+        // --- GLOBAL VARIABLES ---
+        let socket = null;
+        let audioContext = null;
+        let mediaStream = null;
+        let processor = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT = 3;
 
-        // --- FIELDS ---
+        // UI Elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const reportBtn = document.getElementById('report-btn'); 
+        const clearBtn = document.getElementById('clear-btn');
+        const statusLight = document.getElementById('status-light');
+        const statusText = document.getElementById('status-text');
+        const transcriptBox = document.getElementById('transcript-box');
+        const fieldsContainer = document.getElementById('fields-container');
+        const addFieldBtn = document.getElementById('add-field-btn');
+        const fieldNameInput = document.getElementById('field-name-input');
+        const fieldHintInput = document.getElementById('field-hint-input');
+        const templateDropdown = document.getElementById('template-dropdown');
+
+        // State
+        let fields = [];
+        let fullTranscript = '';
+
+        // --- FIELD & TEMPLATE LOGIC ---
         function initDefaultFields() {
-            if(fields.length===0) { addField('Name','Full Name'); addField('Date','Date'); addField('Summary','Summary'); }
+            if (fields.length === 0) {
+                addField('Name', 'Extract the person\'s full name');
+                addField('Date', 'Extract the date mentioned');
+                addField('Summary', 'Brief summary of the conversation');
+            }
         }
+
         function addField(name, hint) {
-            const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            if(fields.find(f=>f.id===id)) return;
-            fields.push({id,name,hint,value:'',locked:false});
-            renderField(id,name,hint);
+            const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            if (fields.find(f => f.id === id)) return;
+            fields.push({ id, name, hint, value: '', locked: false });
+            renderField(id, name, hint);
             syncFieldsToServer();
         }
+
+        // --- RESTORED RENDER FIELD (Includes Edit Button) ---
         function renderField(id, name, hint) {
-            const div = document.createElement('div'); div.className='field-row'; div.id=id;
-            div.innerHTML = `
-                <div style="display:flex; flex-direction:column;">
+            const field = fields.find(f => f.id === id);
+            const isLocked = field?.locked || false;
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'field-row';
+            fieldDiv.id = id;
+            fieldDiv.innerHTML = `
+                <div class="field-content">
                     <div class="field-label"><span class="field-name">${name}</span></div>
-                    <textarea class="field-input" id="input-${id}" placeholder="${hint}" oninput="updateVal('${id}',this.value)"></textarea>
+                    <div class="field-hint">${hint}</div>
+                    <textarea class="field-input ${isLocked ? 'locked' : ''}" data-field-id="${id}" placeholder="Auto-populated..." oninput="autoGrowTextarea(this); updateFieldData('${id}', this.value)">${field?.value || ''}</textarea>
                 </div>
                 <div class="field-actions">
-                    <button class="icon-btn" onclick="toggleLock('${id}')">🔓</button>
-                    <button class="icon-btn delete" onclick="delField('${id}')">🗑️</button>
-                </div>`;
-            fieldsContainer.appendChild(div);
+                    <button class="icon-btn ${isLocked ? 'locked' : ''}" onclick="toggleLock('${id}')">${isLocked ? '🔒' : '🔓'}</button>
+                    <button class="icon-btn" onclick="editField('${id}')">✏️</button>
+                    <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️</button>
+                </div>
+            `;
+            fieldsContainer.appendChild(fieldDiv);
         }
-        window.updateVal = (id,v) => { const f=fields.find(x=>x.id===id); if(f) f.value=v; };
-        window.toggleLock = (id) => { 
-            const f=fields.find(x=>x.id===id); f.locked=!f.locked;
-            const btn = document.querySelector(`#${id} .icon-btn`);
-            const inp = document.getElementById(`input-${id}`);
-            btn.innerText = f.locked ? '🔒' : '🔓';
-            btn.classList.toggle('locked', f.locked);
-            inp.classList.toggle('locked', f.locked);
-        };
-        window.delField = (id) => { if(confirm('Delete?')) { fields=fields.filter(x=>x.id!==id); document.getElementById(id).remove(); } };
 
-        // --- SYNC FIELDS ---
+        window.updateFieldData = function(id, value) {
+            const field = fields.find(f => f.id === id);
+            if (field) field.value = value;
+        };
+
+        window.autoGrowTextarea = function(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        };
+
+        window.toggleLock = function(id) {
+            const field = fields.find(f => f.id === id);
+            if (!field) return;
+            field.locked = !field.locked;
+            const fieldDiv = document.getElementById(id);
+            const lockBtn = fieldDiv.querySelector('.icon-btn');
+            const textarea = fieldDiv.querySelector('.field-input');
+            if (field.locked) {
+                lockBtn.textContent = '🔒'; lockBtn.classList.add('locked'); textarea.classList.add('locked');
+            } else {
+                lockBtn.textContent = '🔓'; lockBtn.classList.remove('locked'); textarea.classList.remove('locked');
+            }
+        };
+
+        window.editField = function(id) {
+            const field = fields.find(f => f.id === id);
+            if (!field) return;
+            const newName = prompt('Edit field name:', field.name);
+            const newHint = prompt('Edit extraction hint:', field.hint);
+            if (newName) field.name = newName;
+            if (newHint) field.hint = newHint;
+            document.getElementById(id).remove();
+            renderField(id, field.name, field.hint);
+            syncFieldsToServer();
+        };
+
+        window.deleteField = function(id) {
+            if (!confirm('Delete this field?')) return;
+            fields = fields.filter(f => f.id !== id);
+            document.getElementById(id).remove();
+            syncFieldsToServer();
+        };
+
         function syncFieldsToServer() {
             if (socket && socket.readyState === WebSocket.OPEN) {
                 const templateData = fields.map(f => ({ id: f.id, name: f.name, hint: f.hint }));
@@ -196,8 +480,7 @@
             }
         }
 
-        // --- SMART UPDATE (DEDUPLICATION FIX) ---
-        // Prevents overwriting AND prevents duplicate appending.
+        // --- IMPROVED LOGIC: PREVENT OVERWRITE & DUPLICATION ---
         function updateFieldValue(fieldId, value) {
             const field = fields.find(f => f.id === fieldId);
             if (!field || field.locked) return;
@@ -205,18 +488,19 @@
             const cleanValue = (value === null || value === 'null') ? '' : value.trim();
             if (!cleanValue) return; // Ignore empty inputs from server
 
-            // 1. If field is currently empty, simply set it
+            // 1. If field is empty, just set it
             if (!field.value) {
                 field.value = cleanValue;
             } 
-            // 2. If field has data, Check for Duplicates before appending
+            // 2. If field has data, check for duplicates before appending
             else {
-                // Normalize for case-insensitive check
-                const currentText = field.value.toLowerCase();
-                const newText = cleanValue.toLowerCase();
+                // Check if the NEW text is ALREADY inside the EXISTING text
+                // normalize both to lowercase for comparison
+                const existing = field.value.toLowerCase();
+                const incoming = cleanValue.toLowerCase();
 
-                // Only append if the EXACT new text is NOT already inside the field
-                if (!currentText.includes(newText)) {
+                if (!existing.includes(incoming)) {
+                    // Only append if it's actually new information
                     field.value += " " + cleanValue; 
                 }
             }
@@ -233,183 +517,326 @@
             }
         }
 
-        // --- AUDIO ---
-        async function startRecording() {
-            try {
-                if(window.Capacitor) {
-                    try { await Capacitor.Plugins.AndroidPermissions.requestPermissions({permissions:['android.permission.RECORD_AUDIO']}); } catch(e){}
+        // --- AUDIO / WEBSOCKET ---
+        function convertFloat32ToPCM16(float32Array) {
+            const pcm16 = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm16;
+        }
+
+        function downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
+            if (inputSampleRate === outputSampleRate) return buffer;
+            const sampleRateRatio = inputSampleRate / outputSampleRate;
+            const newLength = Math.round(buffer.length / sampleRateRatio);
+            const result = new Float32Array(newLength);
+            let offsetResult = 0;
+            let offsetBuffer = 0;
+            while (offsetResult < result.length) {
+                const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+                let accum = 0;
+                let count = 0;
+                for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+                    accum += buffer[i]; count++;
                 }
-                mediaStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true}});
+                result[offsetResult] = accum / count;
+                offsetResult++; offsetBuffer = nextOffsetBuffer;
+            }
+            return result;
+        }
+
+        async function checkCapacitor() {
+            if (window.Capacitor && window.Capacitor.isNative) {
+                try {
+                    await Capacitor.Plugins.AndroidPermissions.requestPermissions({
+                        permissions: ['android.permission.RECORD_AUDIO', 'android.permission.FOREGROUND_SERVICE'] 
+                    });
+                    try {
+                        await Capacitor.Plugins.ForegroundService.startForegroundService({
+                            id: 123, title: "Bingo Notes Listening", body: "Recording in progress...", smallIcon: "ic_mic", 
+                        });
+                    } catch (e) { console.log("Foreground service skipped"); }
+                    
+                    if (Capacitor.Plugins.KeepAwake) { await Capacitor.Plugins.KeepAwake.keepAwake(); }
+                } catch (err) { console.warn("Native setup failed/skipped:", err); }
+            }
+        }
+
+        async function startRecording() {
+            if (!currentWsUrl) {
+                alert("Please click the Gear ⚙️ icon to set your Server URL first.");
+                settingsBtn.click();
+                return;
+            }
+            try {
+                await checkCapacitor(); 
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+                });
+
                 socket = new WebSocket(currentWsUrl);
                 
                 socket.onopen = () => {
-                    statusLight.style.background='#28a745'; document.getElementById('status-text').innerText='Recording...';
+                    console.log('WebSocket connected');
+                    statusLight.style.background = '#28a745'; statusText.textContent = 'Recording...';
                     reconnectAttempts = 0; syncFieldsToServer();
-                    audioContext = new (window.AudioContext||window.webkitAudioContext)();
-                    const src = audioContext.createMediaStreamSource(mediaStream);
-                    processor = audioContext.createScriptProcessor(4096,1,1);
-                    processor.onaudioprocess = e => {
-                        if(socket.readyState===1) {
-                            const data = e.inputBuffer.getChannelData(0);
-                            const pcm = new Int16Array(data.length);
-                            for(let i=0;i<data.length;i++) pcm[i] = Math.max(-1,Math.min(1,data[i])) < 0 ? data[i]*0x8000 : data[i]*0x7FFF;
-                            socket.send(pcm.buffer);
+                    
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(mediaStream);
+                    processor = audioContext.createScriptProcessor(4096, 1, 1);
+                    
+                    processor.onaudioprocess = (e) => {
+                        if (socket && socket.readyState === WebSocket.OPEN) {
+                            const inputData = e.inputBuffer.getChannelData(0);
+                            const downsampled = downsampleBuffer(inputData, audioContext.sampleRate, 16000);
+                            const pcm16 = convertFloat32ToPCM16(downsampled);
+                            socket.send(pcm16.buffer);
                         }
                     };
-                    src.connect(processor); processor.connect(audioContext.destination);
-                    document.getElementById('start-btn').disabled=true; document.getElementById('stop-btn').disabled=false;
+                    source.connect(processor); processor.connect(audioContext.destination);
                 };
-                
-                socket.onmessage = e => {
-                    const msg = JSON.parse(e.data);
-                    if(msg.type==='transcript') {
-                        transcriptBox.textContent = msg.text;
-                        if(msg.isFinal) fullTranscript += msg.text + ' ';
-                    } else if(msg.type==='templateUpdate') {
-                        Object.keys(msg.data).forEach(k => updateFieldValue(k, msg.data[k]));
+
+                socket.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'status') {
+                            statusLight.style.background = msg.active ? '#ffc107' : '#28a745';
+                            statusText.textContent = msg.active ? 'Analyzing...' : 'Recording...';
+                        } else if (msg.type === 'transcript') {
+                            transcriptBox.textContent = msg.text;
+                            if (msg.isFinal) fullTranscript += msg.text + '\n';
+                        } else if (msg.type === 'templateUpdate' && msg.data) {
+                            Object.keys(msg.data).forEach(key => updateFieldValue(key, msg.data[key]));
+                        }
+                    } catch (err) { console.warn('Message error:', err); }
+                };
+
+                socket.onerror = (error) => { console.error('WS Error:', error); statusText.textContent = 'Connection error'; };
+                socket.onclose = () => {
+                    if (processor && mediaStream && mediaStream.active) {
+                        if (reconnectAttempts < MAX_RECONNECT) {
+                            reconnectAttempts++; setTimeout(() => { stopRecording(); startRecording(); }, 1000);
+                        } else { stopRecording(); alert('Connection lost.'); }
                     }
                 };
-            } catch(e) { alert('Mic Error: '+e.message); }
+                startBtn.disabled = true; stopBtn.disabled = false;
+            } catch (err) { alert('Mic error: ' + err.message); stopRecording(); }
         }
 
-        function stop() {
-            if(processor) { processor.disconnect(); processor=null; }
-            if(mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
-            if(socket) { socket.close(); socket=null; }
-            statusLight.style.background='#bbb'; document.getElementById('status-text').innerText='Ready';
-            document.getElementById('start-btn').disabled=false; document.getElementById('stop-btn').disabled=true;
-        }
-
-        document.getElementById('start-btn').onclick = startRecording;
-        document.getElementById('stop-btn').onclick = stop;
-        document.getElementById('clear-btn').onclick = () => {
-            if(confirm('Clear Form?')) { 
-                fields.forEach(f=>{f.value=''; document.getElementById(`input-${f.id}`).value='';});
-                document.getElementById('manualNotes').value=''; fullTranscript=''; transcriptBox.innerText='Waiting...';
+        function stopRecording() {
+            if (processor) { processor.disconnect(); processor = null; }
+            if (audioContext && audioContext.state !== 'closed') { audioContext.close(); audioContext = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
+            if (socket) {
+                if (socket.readyState === WebSocket.OPEN) socket.send('stop');
+                socket.close(); socket = null;
             }
-        };
+            statusLight.style.background = '#bbb'; statusText.textContent = 'Ready';
+            startBtn.disabled = false; stopBtn.disabled = true;
+        }
 
         // --- REPOSITORY SYSTEM ---
-        function generateMD(note) {
-            let txt = `# ${note.template}\n**Date:** ${note.date}\n\n`;
-            note.fields.forEach(f => txt += `## ${f.label}\n${f.value}\n\n`);
-            return txt;
+
+        function generateNoteMarkdown(note) {
+            let text = `# ${note.template || 'Bingo Note'}\n**Date:** ${note.date}\n\n`;
+            note.fields.forEach(f => text += `## ${f.label}\n${f.value}\n\n`);
+            return text;
         }
 
-        document.getElementById('report-btn').onclick = () => {
-            const note = {
-                id: Date.now(), date: new Date().toLocaleString(),
-                template: document.getElementById('template-dropdown').value || 'General',
+        function saveCurrentNote() {
+            const noteData = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                template: document.getElementById('template-dropdown')?.value || "General",
                 fields: []
             };
-            fields.forEach(f => note.fields.push({label:f.name, value:f.value}));
+
+            // Grab Dynamic Fields
+            document.querySelectorAll('#fields-container .field-row').forEach(group => {
+                noteData.fields.push({
+                    label: group.querySelector('.field-name').innerText,
+                    value: group.querySelector('.field-input').value
+                });
+            });
+
+            // Grab User Notes
             const userNotes = document.getElementById('manualNotes').value;
-            if(userNotes) note.fields.push({label:'User Notes', value:userNotes});
-            if(fullTranscript) note.fields.push({label:'Transcript', value:fullTranscript});
-
-            const hist = JSON.parse(localStorage.getItem('bingoHist')||'[]');
-            hist.unshift(note);
-            localStorage.setItem('bingoHist', JSON.stringify(hist));
+            if (userNotes && userNotes.trim() !== "") {
+                noteData.fields.push({ label: "📝 User Notes", value: userNotes });
+            }
             
-            alert('Saved to Repository! ✅');
-            renderRepo();
-            document.getElementById('historyContainer').style.display='block';
-            document.getElementById('viewHistoryBtn').innerText='Hide Saved Notes';
+            // Add Transcript
+            if(fullTranscript && fullTranscript.trim() !== "") {
+                noteData.fields.push({ label: "Full Transcript", value: fullTranscript });
+            }
+
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history.unshift(noteData);
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            
+            renderHistory();
+            
+            // Auto-open history
+            const container = document.getElementById('historyContainer');
+            container.style.display = 'block';
+            document.getElementById('viewHistoryBtn').innerText = "Hide Saved Notes";
+            // Scroll to bottom
             window.scrollTo(0, document.body.scrollHeight);
-        };
-
-        function renderRepo() {
-            const hist = JSON.parse(localStorage.getItem('bingoHist')||'[]');
-            const cont = document.getElementById('historyContainer');
-            cont.innerHTML = '';
-            if(hist.length===0) { cont.innerHTML='<p style="text-align:center;color:#777;">Empty</p>'; return; }
             
-            hist.forEach(n => {
-                const div = document.createElement('div'); div.className='note-card';
-                div.innerHTML = `
-                    <div class="note-header"><strong>${n.template}</strong><small>${n.date}</small></div>
-                    <div class="note-content">${n.fields[0]?.value || '...'}</div>
+            alert("Note Saved to Repository! ✅");
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = '';
+
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color:#777; text-align:center;">No saved notes yet.</p>';
+                return;
+            }
+
+            history.forEach(note => {
+                const card = document.createElement('div');
+                card.className = "note-card";
+                
+                // Show first 2 fields as preview
+                let contentPreview = note.fields.slice(0, 2).map(f => `<b>${f.label}:</b> ${f.value.substring(0, 50)}...`).join('<br>');
+                
+                card.innerHTML = `
+                    <div class="note-header">
+                        <strong style="color:#007bff;">${note.template}</strong>
+                        <small style="color:#666;">${note.date}</small>
+                    </div>
+                    <div class="note-content">${contentPreview}</div>
                     <div class="note-actions">
-                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteNative(${n.id})">📤 Share</button>
-                        <button class="note-btn" style="background:#17a2b8;" onclick="copyNote(${n.id})">📋 Copy</button>
-                        <button class="note-btn" style="background:#dc3545;" onclick="delNote(${n.id})">🗑️ Delete</button>
-                    </div>`;
-                cont.appendChild(div);
+                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteAsFile(${note.id})">📤 Share (MD)</button>
+                        <button class="note-btn" style="background:#17a2b8;" onclick="copyNote(${note.id})">📋 Copy</button>
+                        <button class="note-btn" style="background:#dc3545;" onclick="deleteNote(${note.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                container.appendChild(card);
             });
         }
 
-        // --- SAFE SHARING (Text Only) ---
-        async function shareNoteNative(id) {
-            const n = JSON.parse(localStorage.getItem('bingoHist')).find(x=>x.id===id);
-            if(!n) return;
-            const txt = generateMD(n);
+        // --- FILE SHARING LOGIC (Updated to use Native Share for Text) ---
+        // Keeps function name "shareNoteAsFile" so HTML calls still work.
+        async function shareNoteAsFile(id) {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const note = history.find(n => n.id === id);
+            if (!note) return;
+
+            const mdContent = generateNoteMarkdown(note);
+
+            try {
+                // Try Native Capacitor Share First (Text Mode)
+                if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
+                    await Capacitor.Plugins.Share.share({
+                        title: 'Bingo Note',
+                        text: mdContent,
+                        dialogTitle: 'Share Note'
+                    });
+                } 
+                // Fallback to Web Share API
+                else if (navigator.share) {
+                    await navigator.share({
+                        title: 'Bingo Note',
+                        text: mdContent
+                    });
+                } 
+                else {
+                    throw new Error("No Share API");
+                }
+            } catch (err) {
+                console.warn("Share failed, copying to clipboard", err);
+                copyNote(id);
+                alert("Share not supported on this device. Note copied to clipboard.");
+            }
+        }
+        
+        async function shareAllNotes() {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            if (history.length === 0) { alert("No notes to share!"); return; }
+
+            let fullContent = "# Bingo Notes Archive\n\n";
+            history.forEach(note => {
+                fullContent += generateNoteMarkdown(note) + "\n---\n\n";
+            });
 
             try {
                 if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
                     await Capacitor.Plugins.Share.share({
-                        title: 'Bingo Note',
-                        text: txt,
-                        dialogTitle: 'Share Note'
+                        title: 'Bingo Archive',
+                        text: fullContent,
+                        dialogTitle: 'Share Archive'
                     });
-                } 
-                else if (navigator.share) {
-                    await navigator.share({ title: 'Bingo Note', text: txt });
+                } else if (navigator.share) {
+                    await navigator.share({
+                        title: 'Bingo Archive',
+                        text: fullContent
+                    });
+                } else {
+                    throw new Error("No Share");
                 }
-                else {
-                    throw new Error("No share supported");
-                }
-            } catch(e) {
-                copyNote(id);
-                alert("Share not supported. Copied to clipboard.");
+            } catch (err) {
+                console.warn("Share failed, copying to clipboard", err);
+                navigator.clipboard.writeText(fullContent);
+                alert("Share menu not supported. Copied to clipboard.");
             }
         }
 
-        document.getElementById('shareAllBtn').onclick = async () => {
-            const h = JSON.parse(localStorage.getItem('bingoHist')||'[]');
-            if(!h.length) return alert('No notes.');
-            let allTxt = '# Archive\n\n'; h.forEach(n => allTxt += generateMD(n) + '\n---\n');
-            
-            try {
-                if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
-                    await Capacitor.Plugins.Share.share({ title: 'Archive', text: allTxt, dialogTitle: 'Share Archive' });
-                } else if(navigator.share) {
-                    await navigator.share({title:'Archive', text:allTxt});
-                } else { throw new Error("No Share"); }
-            } catch(e) {
-                navigator.clipboard.writeText(allTxt); alert('Copied all to clipboard.');
+        async function copyNote(id) {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const note = history.find(n => n.id === id);
+            if (!note) return;
+            await navigator.clipboard.writeText(generateNoteMarkdown(note));
+            alert("Copied to clipboard! 📋");
+        }
+
+        window.deleteNote = function(id) {
+            if(!confirm("Delete this note?")) return;
+            let history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            history = history.filter(n => n.id !== id);
+            localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
+            renderHistory();
+        };
+
+        // --- BUTTON ACTIONS ---
+        reportBtn.addEventListener('click', saveCurrentNote); 
+        
+        document.getElementById('shareAllBtn').addEventListener('click', shareAllNotes);
+        document.getElementById('clearRepoBtn').addEventListener('click', () => {
+            if(confirm("Permanently delete ALL saved notes?")) {
+                localStorage.removeItem('bingoNotesHistory');
+                renderHistory();
             }
-        };
+        });
 
-        window.copyNote = (id) => {
-            const n = JSON.parse(localStorage.getItem('bingoHist')).find(x=>x.id===id);
-            navigator.clipboard.writeText(generateMD(n));
-            alert('Copied! 📋');
-        };
-
-        window.delNote = (id) => {
-            if(confirm('Delete?')) {
-                const h = JSON.parse(localStorage.getItem('bingoHist')).filter(x=>x.id!==id);
-                localStorage.setItem('bingoHist', JSON.stringify(h)); renderRepo();
+        document.getElementById('viewHistoryBtn').addEventListener('click', () => {
+            const container = document.getElementById('historyContainer');
+            const btn = document.getElementById('viewHistoryBtn');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                btn.innerText = "Hide Saved Notes";
+                renderHistory();
+            } else {
+                container.style.display = 'none';
+                btn.innerText = "Show Saved Notes";
             }
-        };
+        });
 
-        document.getElementById('clearRepoBtn').onclick = () => {
-            if(confirm('Delete ALL history?')) { localStorage.removeItem('bingoHist'); renderRepo(); }
-        };
-
-        document.getElementById('viewHistoryBtn').onclick = function() {
-            const c = document.getElementById('historyContainer');
-            c.style.display = c.style.display==='none'?'block':'none';
-            this.innerText = c.style.display==='block'?'Hide Saved Notes':'Show Saved Notes';
-            renderRepo();
-        };
-
-        document.getElementById('add-field-btn').onclick = () => {
-            const n = document.getElementById('field-name-input');
-            const h = document.getElementById('field-hint-input');
-            if(n.value) { addField(n.value, h.value||'Hint'); n.value=''; h.value=''; }
-        };
-
+        clearBtn.addEventListener('click', () => {
+            if (!confirm('Clear all current form data?')) return;
+            fields.forEach(f => f.value = '');
+            document.querySelectorAll('.field-input').forEach(input => input.value = '');
+            const manual = document.getElementById('manualNotes');
+            if(manual) manual.value = '';
+            transcriptBox.textContent = 'Waiting for audio...';
+            fullTranscript = '';
+        });
+        
         // ... Template Buttons ...
         document.getElementById('save-template-btn').addEventListener('click', () => {
             const name = prompt('Template Name:'); if(!name) return;
@@ -432,7 +859,20 @@
             });
         }
 
-        initDefaultFields(); renderRepo(); updateTemplateDropdown();
+        // --- EVENTS ---
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+        addFieldBtn.addEventListener('click', () => {
+            if(fieldNameInput.value.trim()) { 
+                addField(fieldNameInput.value.trim(), fieldHintInput.value.trim()||'Hint');
+                fieldNameInput.value=''; fieldHintInput.value='';
+            }
+        });
+
+        initDefaultFields();
+        updateTemplateDropdown();
+        renderHistory(); 
+
     </script>
 </body>
 </html>
