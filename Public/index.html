@@ -237,9 +237,9 @@
             padding-bottom: 8px;
             border-bottom: 1px solid #eee;
         }
-        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; max-height: 100px; overflow: hidden; text-overflow: ellipsis; }
+        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; }
         .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; font-weight: bold; }
+        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; }
 
         /* Fixed User Notes Area (Full Width) */
         .user-notes-container {
@@ -340,7 +340,7 @@
         <h3>📚 Note Repository</h3>
         
         <div id="repo-controls">
-            <button id="shareAllBtn" style="background: #17a2b8; color: white;">📤 Share All (.md)</button>
+            <button id="shareAllBtn" style="background: #17a2b8; color: white;">📤 Share All</button>
             <button id="clearRepoBtn" style="background: #dc3545; color: white;">🗑️ Clear All</button>
         </div>
 
@@ -689,7 +689,7 @@
                     </div>
                     <div class="note-content">${contentPreview}</div>
                     <div class="note-actions">
-                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteSafe(${note.id})">📤 Share (MD)</button>
+                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteNative(${note.id})">📤 Share (MD)</button>
                         <button class="note-btn" style="background:#17a2b8;" onclick="copyNote(${note.id})">📋 Copy</button>
                         <button class="note-btn" style="background:#dc3545;" onclick="deleteNote(${note.id})">🗑️ Delete</button>
                     </div>
@@ -698,32 +698,35 @@
             });
         }
 
-        // --- SAFE SHARING LOGIC (CRASH PROOF) ---
-        // Uses simple text sharing (navigator.share) which works universally
-        // without requiring strict FileUri permissions or causing crashes on Samsung.
-        async function shareNoteSafe(id) {
+        // --- NEW: NATIVE ANDROID SHARING (Fixes "Not Supported" Error) ---
+        async function shareNoteNative(id) {
             const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
             if (!note) return;
             const txt = generateNoteMarkdown(note);
 
             try {
-                if (navigator.share) {
-                    await navigator.share({
+                // 1. Try Native Capacitor Plugin (The Fix)
+                if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
+                    await Capacitor.Plugins.Share.share({
                         title: 'Bingo Note',
-                        text: txt
+                        text: txt,
+                        dialogTitle: 'Share Note'
                     });
-                } else {
-                    throw new Error("Share API unavailable");
+                } 
+                // 2. Fallback to Web API (Likely to fail on your phone)
+                else if (navigator.share) {
+                    await navigator.share({ title: 'Bingo Note', text: txt });
+                }
+                else {
+                    throw new Error("No share supported");
                 }
             } catch(e) {
-                console.warn("Share failed, falling back to clipboard", e);
                 copyNote(id);
-                alert("Share menu not supported on this device. Note copied to clipboard.");
+                alert("Share not supported (Native Plugin Missing). Copied to clipboard.");
             }
         }
-
-        // Share All (Safe Version)
-        document.getElementById('shareAllBtn').addEventListener('click', async () => {
+        
+        async function shareAllNotes() {
             const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
             if (history.length === 0) { alert("No notes to share!"); return; }
 
@@ -733,19 +736,25 @@
             });
 
             try {
-                if (navigator.share) {
+                if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
+                    await Capacitor.Plugins.Share.share({
+                        title: 'Bingo Archive',
+                        text: fullContent,
+                        dialogTitle: 'Share Archive'
+                    });
+                } else if (navigator.share) {
                     await navigator.share({
                         title: 'Bingo Archive',
                         text: fullContent
                     });
                 } else {
-                    throw new Error("Share API unavailable");
+                    throw new Error("No Share");
                 }
             } catch(e) {
+                alert("Share failed. Copied to clipboard.");
                 navigator.clipboard.writeText(fullContent);
-                alert("Share menu not supported. Archive copied to clipboard.");
             }
-        });
+        }
 
         async function copyNote(id) {
             const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
@@ -765,6 +774,7 @@
         // --- BUTTON ACTIONS ---
         reportBtn.addEventListener('click', saveCurrentNote);
         
+        document.getElementById('shareAllBtn').addEventListener('click', shareAllNotes);
         document.getElementById('clearRepoBtn').addEventListener('click', () => {
             if(confirm("Permanently delete ALL saved notes?")) {
                 localStorage.removeItem('bingoNotesHistory');
@@ -795,7 +805,7 @@
             fullTranscript = '';
         });
         
-        // ... Template Buttons ...
+        // ... Template Buttons (Same as before) ...
         document.getElementById('save-template-btn').addEventListener('click', () => {
             const name = prompt('Template Name:'); if(!name) return;
             const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
@@ -829,7 +839,7 @@
 
         initDefaultFields();
         updateTemplateDropdown();
-        renderHistory(); // Initial render
+        renderHistory(); // Initial render of any saved notes
 
     </script>
 </body>
