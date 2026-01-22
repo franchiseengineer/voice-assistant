@@ -237,11 +237,11 @@
             padding-bottom: 8px;
             border-bottom: 1px solid #eee;
         }
-        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; }
+        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; max-height: 120px; overflow: hidden; text-overflow: ellipsis; }
         .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; }
+        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; font-weight: bold; }
 
-        /* Fixed User Notes Area */
+        /* Fixed User Notes Area (Full Width) */
         .user-notes-container {
             margin-top: 25px;
             width: 100%;
@@ -614,7 +614,7 @@
             startBtn.disabled = false; stopBtn.disabled = true;
         }
 
-        // --- NEW REPOSITORY SYSTEM ---
+        // --- REPOSITORY SYSTEM ---
 
         function generateNoteMarkdown(note) {
             let text = `# ${note.template || 'Bingo Note'}\n**Date:** ${note.date}\n\n`;
@@ -689,7 +689,7 @@
                     </div>
                     <div class="note-content">${contentPreview}</div>
                     <div class="note-actions">
-                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteAsFile(${note.id})">📤 Share (MD)</button>
+                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteNative(${note.id})">📤 Share (MD)</button>
                         <button class="note-btn" style="background:#17a2b8;" onclick="copyNote(${note.id})">📋 Copy</button>
                         <button class="note-btn" style="background:#dc3545;" onclick="deleteNote(${note.id})">🗑️ Delete</button>
                     </div>
@@ -698,70 +698,68 @@
             });
         }
 
-        // --- FILE SHARING LOGIC (Android Compatible) ---
-        async function shareNoteAsFile(id) {
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            const note = history.find(n => n.id === id);
+        // --- NATIVE FILE SHARING LOGIC (FIXED) ---
+        // This is the specific fix for the "Sharing not supported" error
+        async function shareNoteNative(id) {
+            const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
             if (!note) return;
 
             const mdContent = generateNoteMarkdown(note);
             const fileName = `BingoNote_${note.id}.md`;
-            const file = new File([mdContent], fileName, { type: "text/markdown" });
 
-            if (navigator.share) {
+            // CHECK: Do we have the Native Plugin?
+            if (window.Capacitor && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
                 try {
-                    // Try to share as a file (Modern Android)
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Bingo Note Export',
-                            text: 'Here is your exported note.'
-                        });
-                    } else {
-                        // Fallback to text sharing
-                        await navigator.share({ title: 'Bingo Note', text: mdContent });
-                    }
-                } catch (err) {
-                    console.error("Share failed", err);
-                    // Last resort fallback
-                    try { await navigator.share({title:'Bingo Note', text:mdContent}); } 
-                    catch(e) { copyNote(id); }
+                    // 1. Write File to Device Cache
+                    await Capacitor.Plugins.Filesystem.writeFile({
+                        path: fileName,
+                        data: mdContent,
+                        directory: 'CACHE',
+                        encoding: 'utf8'
+                    });
+
+                    // 2. Get the File URI (Internal path)
+                    const result = await Capacitor.Plugins.Filesystem.getUri({
+                        path: fileName,
+                        directory: 'CACHE'
+                    });
+
+                    // 3. Share the File URI
+                    await Capacitor.Plugins.Share.share({
+                        title: 'Bingo Note Export',
+                        url: result.uri,
+                    });
+
+                } catch (e) {
+                    console.error("Native Share Error", e);
+                    fallbackShare(mdContent);
                 }
             } else {
-                copyNote(id);
-                alert("Sharing not supported on this device. Note copied to clipboard.");
+                // If not native (e.g., testing in browser), fallback
+                fallbackShare(mdContent);
             }
         }
-        
-        async function shareAllNotes() {
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            if (history.length === 0) { alert("No notes to share!"); return; }
 
-            let fullContent = "# Bingo Notes Archive\n\n";
-            history.forEach(note => {
-                fullContent += generateNoteMarkdown(note) + "\n---\n\n";
-            });
-
-            const fileName = `BingoArchive_${Date.now()}.md`;
-            const file = new File([fullContent], fileName, { type: "text/markdown" });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        // Fallback for non-native environments or errors
+        async function fallbackShare(text) {
+            if (navigator.share) {
                 try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Bingo Archive',
-                        text: 'Full archive of all notes.'
-                    });
-                } catch(err) { console.error(err); }
+                    await navigator.share({ title: 'Bingo Note', text: text });
+                } catch(e) {
+                    copyNoteText(text);
+                }
             } else {
-                alert("File sharing not supported. Copying text...");
-                await navigator.clipboard.writeText(fullContent);
+                copyNoteText(text);
             }
+        }
+
+        function copyNoteText(text) {
+            navigator.clipboard.writeText(text);
+            alert("Sharing failed. Note copied to clipboard.");
         }
 
         async function copyNote(id) {
-            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            const note = history.find(n => n.id === id);
+            const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
             if (!note) return;
             await navigator.clipboard.writeText(generateNoteMarkdown(note));
             alert("Copied to clipboard! 📋");
@@ -776,9 +774,42 @@
         };
 
         // --- BUTTON ACTIONS ---
-        reportBtn.addEventListener('click', saveCurrentNote); // CHANGED: Only saves to repo now
+        reportBtn.addEventListener('click', saveCurrentNote);
         
-        document.getElementById('shareAllBtn').addEventListener('click', shareAllNotes);
+        // Share All Button (Native Version)
+        document.getElementById('shareAllBtn').addEventListener('click', async () => {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            if (history.length === 0) { alert("No notes to share!"); return; }
+
+            let fullContent = "# Bingo Notes Archive\n\n";
+            history.forEach(note => {
+                fullContent += generateNoteMarkdown(note) + "\n---\n\n";
+            });
+
+            const fileName = `BingoArchive_${Date.now()}.md`;
+
+            if (window.Capacitor && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
+                try {
+                    await Capacitor.Plugins.Filesystem.writeFile({
+                        path: fileName,
+                        data: fullContent,
+                        directory: 'CACHE',
+                        encoding: 'utf8'
+                    });
+                    const result = await Capacitor.Plugins.Filesystem.getUri({
+                        path: fileName,
+                        directory: 'CACHE'
+                    });
+                    await Capacitor.Plugins.Share.share({
+                        title: 'Bingo Archive',
+                        url: result.uri,
+                    });
+                } catch(e) { fallbackShare(fullContent); }
+            } else {
+                fallbackShare(fullContent);
+            }
+        });
+
         document.getElementById('clearRepoBtn').addEventListener('click', () => {
             if(confirm("Permanently delete ALL saved notes?")) {
                 localStorage.removeItem('bingoNotesHistory');
@@ -809,7 +840,7 @@
             fullTranscript = '';
         });
         
-        // ... Template Buttons (Same as before) ...
+        // ... Template Buttons ...
         document.getElementById('save-template-btn').addEventListener('click', () => {
             const name = prompt('Template Name:'); if(!name) return;
             const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
@@ -843,7 +874,7 @@
 
         initDefaultFields();
         updateTemplateDropdown();
-        renderHistory(); // Initial render of any saved notes
+        renderHistory(); // Initial render
 
     </script>
 </body>
