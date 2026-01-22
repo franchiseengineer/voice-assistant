@@ -239,7 +239,7 @@
         }
         .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; }
         .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; }
+        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; font-weight: bold; }
 
         /* Fixed User Notes Area (Full Width) */
         .user-notes-container {
@@ -399,6 +399,24 @@
             }
         }
 
+        // --- NEW: INJECT CUSTOM TEMPLATES ---
+        function initTemplates() {
+            const stored = JSON.parse(localStorage.getItem('voice_templates') || '{}');
+            
+            const franchiseTemplate = [{"name":"Franchise Name","hint":"Extract full name."},{"name":"Industry","hint":"The company's industry and all details about the general industry"},{"name":"Investment Level","hint":"High and Low All-in Investment Range, Franchise Fees, Other setup costs"},{"name":"Ownership Type","hint":"Owner operated vs Semi Absentee vs Executive"},{"name":"Products and Services","hint":"What the business provides the customer"},{"name":"Customer","hint":"The target market, demographic, communities, etc."},{"name":"Financial Performance","hint":"Gross Revenues, Average Unit Volumes, Margins, Item 19 information, other financial performance measures"},{"name":"Facility Type and Real Estate","hint":"Mobile, Home Office, Retail, Office Location, Size and Class of Real Estate if required"},{"name":"History of the Franchise","hint":"Founder's Story, important events in the company timeline"},{"name":"Role of the Owner","hint":"Regular required tasks of a franchisee in the system. Required hours worked. Where they can personally operate"},{"name":"Pre-Opening Training and Support","hint":"What the Franchisor provides to help the Franchisee get there business open and operating"},{"name":"Ongoing Training and Support","hint":"What the Franchisor provides in support for their actively operating Franchisees."},{"name":"Growth and Exit Potential","hint":"The potential size of the business, the resale value when ready to exit. Do resales sell quickly?"},{"name":"Lifestyle and Values ","hint":"Certain company values and endeavors the Franchise upholds and gives back to the community."},{"name":"Territory Size and Description","hint":"How territories are determined"},{"name":"Brand Equity","hint":"Public perception of the brand, Overall size of the franchise, Number of owners and locations, Reputation within the industry, Brand awareness among consumers"},{"name":"Customer Acquisition","hint":"Marketing and Sales strategies and support"},{"name":"Operational Complexity","hint":"Number and type of employees, Challenges faced in the industry, simple or complex operational model"},{"name":"Ideal Candidate","hint":"What makes someone a perfect match for this franchise"},{"name":"Veterans and First Responders","hint":"Initiatives and Incentives to attract vets and first responders"}];
+            
+            const businessOwnerTemplate = [{"name":"Company Name","hint":"Name of the owner's business"},{"name":"Owner's Name","hint":"Extract full name"},{"name":"Phone Number","hint":"Extract details."},{"name":"Email Address","hint":"Extract details."},{"name":"Business Address","hint":"Extract Full Address"},{"name":"Company Website","hint":"Extract details."},{"name":"What year did you start your business?","hint":"Year business was started and / or acquired by the current owner"},{"name":"How many locations?","hint":"Number and locations of currently open sites"},{"name":"Business Description","hint":"The industry, product or service, customers served, other descriptions of the business"},{"name":"Who are your main competitors?","hint":"Names of primary competitors"},{"name":"What makes your business different?","hint":"Everything unique developed by this business, how they outperform competitors, why an investor or customer would choose them over a competitor"},{"name":"Annual Revenue","hint":"Estimate of annual gross revenues"},{"name":"Business Estimated Startup Costs","hint":"Ballpark estimate of what it would cost to open a new location plus a franchise fee"},{"name":"Have you looked at franchising before?","hint":"Owner's experience to date investigating franchising for this business if any"},{"name":"Any interest from potential franchisees?","hint":"Details of any friends, family, or others who have expressed interest in becoming a franchisee"}];
+
+            // Merge defaults into storage
+            const defaults = {
+                "Franchise Model": franchiseTemplate,
+                "Business Owner": businessOwnerTemplate
+            };
+            
+            Object.assign(stored, defaults);
+            localStorage.setItem('voice_templates', JSON.stringify(stored));
+        }
+
         function addField(name, hint) {
             const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             if (fields.find(f => f.id === id)) return;
@@ -482,15 +500,24 @@
         function updateFieldValue(fieldId, value) {
             const field = fields.find(f => f.id === fieldId);
             if (!field || field.locked) return;
-            field.value = value;
+
+            const cleanValue = (value === null || value === 'null') ? '' : value.trim();
+            
+            // 1. If server sends nothing, DO NOTHING. Keep existing data safe.
+            if (!cleanValue) return;
+
+            // 2. If server sends data, OVERWRITE. (Fixes duplication)
+            field.value = cleanValue;
+
             const textarea = document.querySelector(`[data-field-id="${fieldId}"]`);
-            if (textarea && value && value.trim() && value !== 'null') {
-                textarea.value = value;
+            if (textarea) {
+                textarea.value = field.value;
                 textarea.style.height = 'auto';
                 textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-                const fieldRow = document.getElementById(fieldId);
-                fieldRow.classList.add('updated');
-                setTimeout(() => fieldRow.classList.remove('updated'), 1000);
+                
+                const row = document.getElementById(fieldId);
+                row.classList.add('updated');
+                setTimeout(() => row.classList.remove('updated'), 1000);
             }
         }
 
@@ -838,6 +865,7 @@
         });
 
         initDefaultFields();
+        initTemplates(); // <--- This loads your custom templates
         updateTemplateDropdown();
         renderHistory(); // Initial render of any saved notes
 
