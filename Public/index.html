@@ -479,21 +479,38 @@
             }
         }
 
+        // --- SMART UPDATE (APPEND MODE) ---
+        // Prevents overwriting existing data when recording resumes
         function updateFieldValue(fieldId, value) {
             const field = fields.find(f => f.id === fieldId);
             if (!field || field.locked) return;
-            field.value = value;
-            const textarea = document.querySelector(`[data-field-id="${fieldId}"]`);
-            if (textarea && value && value.trim() && value !== 'null') {
-                textarea.value = value;
+
+            const cleanValue = (value === null || value === 'null') ? '' : value.trim();
+            if (!cleanValue) return; // Ignore empty inputs from server
+
+            // If field is currently empty, simply set it
+            if (!field.value) {
+                field.value = cleanValue;
+            } 
+            // If field has data, APPEND the new data (unless it's a duplicate)
+            else {
+                // Only append if the exact text isn't already there
+                if (!field.value.includes(cleanValue)) {
+                    field.value += " " + cleanValue; 
+                }
+            }
+
+            const textarea = document.getElementById(`input-${fieldId}`);
+            if (textarea) {
+                textarea.value = field.value;
                 textarea.style.height = 'auto';
                 textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-                const fieldRow = document.getElementById(fieldId);
-                fieldRow.classList.add('updated');
-                setTimeout(() => fieldRow.classList.remove('updated'), 1000);
+                
+                const row = document.getElementById(fieldId);
+                row.classList.add('updated');
+                setTimeout(() => row.classList.remove('updated'), 1000);
             }
         }
-
         // --- AUDIO / WEBSOCKET ---
         function convertFloat32ToPCM16(float32Array) {
             const pcm16 = new Int16Array(float32Array.length);
