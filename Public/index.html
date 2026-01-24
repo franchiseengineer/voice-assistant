@@ -490,12 +490,27 @@
             syncFieldsToServer();
         };
 
+        // UPDATED: Sends values + notes to server for Context Awareness
         function syncFieldsToServer() {
             if (socket && socket.readyState === WebSocket.OPEN) {
-                const templateData = fields.map(f => ({ id: f.id, name: f.name, hint: f.hint }));
-                socket.send('updateTemplate:' + JSON.stringify(templateData));
+                const templateData = fields.map(f => ({ 
+                    id: f.id, 
+                    name: f.name, 
+                    hint: f.hint,
+                    currentValue: f.value // <--- CRITICAL: Sending the data
+                }));
+                
+                const userNotes = document.getElementById('manualNotes').value;
+
+                // Send the new JSON message type the server expects
+                socket.send(JSON.stringify({
+                    type: 'contextUpdate',
+                    fields: templateData,
+                    userNotes: userNotes
+                }));
             }
         }
+
 
         function updateFieldValue(fieldId, value) {
             const field = fields.find(f => f.id === fieldId);
@@ -868,6 +883,22 @@
         initTemplates(); // <--- This loads your custom templates
         updateTemplateDropdown();
         renderHistory(); // Initial render of any saved notes
+ 
+        // Trigger sync when User Notes change
+        document.getElementById('manualNotes').addEventListener('input', (e) => {
+            clearTimeout(window.noteSyncTimer);
+            window.noteSyncTimer = setTimeout(syncFieldsToServer, 2000);
+        });
+
+        // Trigger sync when AI or User updates a field value
+        const originalUpdateField = window.updateFieldData;
+        window.updateFieldData = function(id, value) {
+            originalUpdateField(id, value); // Run original logic
+            
+            // Debounce the sync so we don't flood the server
+            clearTimeout(window.fieldSyncTimer);
+            window.fieldSyncTimer = setTimeout(syncFieldsToServer, 2000);
+        };
 
     </script>
 </body>
