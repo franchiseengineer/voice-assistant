@@ -22,8 +22,6 @@ const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 wss.on('connection', (ws) => {
     let dgConnection = null; 
     let activeTemplate = []; 
-    // [NEW] Track client state to prevent overwriting
-    let currentClientState = { fields: [], userNotes: "" };
     let slidingWindowTranscript = ""; 
     let heartbeat = null;
     let connectionStartTime = Date.now();
@@ -34,6 +32,113 @@ wss.on('connection', (ws) => {
         
         heartbeat = setInterval(async () => {
             if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
+            
+            ws.send(JSON.stringify({ type: 'status', active: true }));
+
+            try {
+                // --- YOUR EXACT PROMPT (UNTOUCHED) ---
+                const ASSISTANT_PROMPT = `
+                You are a professional assistant creating a clean, scannable knowledge base. 
+                Your goal is to produce a clean, factual report based on the provided transcript.
+
+                STRICT PERSONA & CONTENT RULES:
+                1. NO SPEAKER LABELS: Do not use phrases like "Speaker 1 says" or "According to Speaker 0." State information as objective facts.
+                2. MULTIPLE PERSPECTIVES: If viewpoints differ, describe the range of ideas neutrally (e.g., "Perspectives on wealth acquisition vary...").
+                3. FACTUAL RECORD: Organize the transcript into factual, bulleted notes for each field.
+                4. SURGICAL EXTRACTION: If a field is "Name," look ONLY for a person's actual name. If "Date," look ONLY for a specific calendar date. 
+                5. NEGATIVE CONSTRAINT: If the transcript does not contain the specific information for a field, leave that field value as an empty string "". Do NOT summarize unrelated themes into these fields.
+
+                STRICT FORMATTING RULES:
+                1. BULLETED NOTES ONLY: Every point must be a separate bullet starting with "* ".
+                2. NEW LINES: Every single bullet point MUST be on its own new line. No paragraphs or blocks of text.
+                3. NO FILLER: Redact all "ums," "ahs," and conversational repetition.
+
+                TRANSCRIPT: "${slidingWindowTranscript}"
+
+                OUTPUT: Return ONLY a flat JSON object where keys match these IDs: ${activeTemplate.map(f => f.id).join(', ')}.
+                `;
+                // -----------------------------------------
+
+                const response = await aiClient.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    config: {
+                        responseMimeType: 'application/json',
+                        generationConfig: {
+                            thinkingConfig: {
+                                thinkingLevel: "MEDIUM"
+                            }, 
+                            temperature: 1.0
+                        }
+                    },
+                    contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }]
+                });
+
+                // --- CRITICAL FIX: Extract text manually (fixes "is not a function" error) ---
+                // The new SDK stores the answer here:
+                let text = "";
+                if (response.candidates && response.candidates[0].content.parts[0].text) {
+                     text = response.candidates[0].content.parts[0].text;
+                }
+                // --------------------------------------------------------------------------
+
+                console.log("Gemini 3 Success:", text);
+                ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
+
+            } catch (err) {
+                console.error("Gemini 3 Error:", err.message);
+            } finally {
+                ws.send(JSON.stringify({ type: 'status', active: false }));
+            }
+        }, 10000); 
+    };
+
+    const setupDeepgram = () => {
+        dgConnection = deepgram.listen.live({
+            model: "nova-2", language: "en-US", smart_format: true, diarize: true,
+            encoding: "linear16", sample_rate: 16000, interim_results: false
+        });
+
+        dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
+            const transcript = data.channel.alternatives[0].transcript;
+            if (transcript && data.is_final) {
+                const labeledText = `[Speaker ${data.channel.alternatives[0].words[0]?.speaker ?? 0}] ${transcript}`;
+                ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
+                slidingWindowTranscript += " " + labeledText;
+            }
+        });
+    };
+
+    ws.on('message', (message) => {
+        const msgStr = message.toString();
+
+        if (msgStr.startsWith('updateTemplate:')) {
+            activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
+            console.log("SUCCESS: Template Updated.");
+            return;
+        }
+
+        if (Buffer.isBuffer(message)) {
+            const sessionAge = (Date.now() - connectionStartTime) / 60000;
+            if (sessionAge > 55 || !dgConnection) {
+                if(dgConnection) dgConnection.finish();
+                setupDeepgram();
+                connectionStartTime = Date.now();
+                if (!heartbeat) startHeartbeat();
+            }
+            if (dgConnection && dgConnection.getReadyState() === 1) {
+                dgConnection.send(message);
+            }
+        }
+    });
+
+    ws.on('close', () => {
+        clearInterval(heartbeat);
+        if (dgConnection) dgConnection.finish();
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Gemini 3 Server (GenAI) active on port ${PORT}`));
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
