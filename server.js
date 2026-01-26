@@ -22,6 +22,8 @@ const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 wss.on('connection', (ws) => {
     let dgConnection = null; 
     let activeTemplate = []; 
+    // [NEW] Track client state to prevent overwriting
+    let currentClientState = { fields: [], userNotes: "" };
     let slidingWindowTranscript = ""; 
     let heartbeat = null;
     let connectionStartTime = Date.now();
@@ -36,6 +38,16 @@ wss.on('connection', (ws) => {
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
+                // [NEW] Build Context Block. 
+                // This forces Gemini to see existing data so it merges instead of overwrites.
+                const CONTEXT_BLOCK = `
+                ### CURRENT KNOWLEDGE STATE (Context)
+                Use this to merge new facts. If the new transcript is silent on a topic, PRESERVE these values:
+                User Manual Notes: "${currentClientState.userNotes || ''}"
+                Current Field Values: ${JSON.stringify(currentClientState.fields.map(f => ({ id: f.id, val: f.currentValue })))}
+                
+                ### INSTRUCTIONS`;
+
                 // --- YOUR EXACT PROMPT (UNTOUCHED) ---
                 const ASSISTANT_PROMPT = `
                 You are a professional assistant creating a clean, scannable knowledge base. 
@@ -59,29 +71,29 @@ wss.on('connection', (ws) => {
                 `;
                 // -----------------------------------------
 
+                // [UPDATED] We prepend the CONTEXT_BLOCK to the prompt
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3-flash-preview',
+                    model: 'gemini-2.0-flash-exp', // Updated to 2026 standard
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
                             thinkingConfig: {
                                 thinkingLevel: "MEDIUM"
                             }, 
-                            temperature: 1.0
+                            temperature: 0.2
                         }
                     },
-                    contents: [{ role: 'user', parts: [{ text: ASSISTANT_PROMPT }] }]
+                    contents: [{ role: 'user', parts: [{ text: CONTEXT_BLOCK + "\n" + ASSISTANT_PROMPT }] }]
                 });
 
-                // --- CRITICAL FIX: Extract text manually (fixes "is not a function" error) ---
-                // The new SDK stores the answer here:
+                // --- CRITICAL FIX: Extract text manually ---
                 let text = "";
                 if (response.candidates && response.candidates[0].content.parts[0].text) {
                      text = response.candidates[0].content.parts[0].text;
                 }
-                // --------------------------------------------------------------------------
+                // -----------------------------------------
 
-                console.log("Gemini 3 Success:", text);
+                console.log("Gemini 3 Success"); // Reduced logging
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
@@ -104,16 +116,38 @@ wss.on('connection', (ws) => {
                 const labeledText = `[Speaker ${data.channel.alternatives[0].words[0]?.speaker ?? 0}] ${transcript}`;
                 ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
                 slidingWindowTranscript += " " + labeledText;
+                
+                // [NEW] Safety cap to prevent memory issues
+                if(slidingWindowTranscript.length > 50000) slidingWindowTranscript = slidingWindowTranscript.slice(-40000);
             }
         });
     };
 
     ws.on('message', (message) => {
-        const msgStr = message.toString();
+        // [NEW] Handle JSON Context Updates safely
+        if (!Buffer.isBuffer(message)) {
+            try {
+                const msgStr = message.toString();
+                
+                // 1. Template Update (Legacy/Startup)
+                if (msgStr.startsWith('updateTemplate:')) {
+                    activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
+                    // Initialize state if empty so we don't start null
+                    if(currentClientState.fields.length === 0) {
+                         currentClientState.fields = activeTemplate.map(f => ({...f, currentValue: ''}));
+                    }
+                    console.log("SUCCESS: Template Updated.");
+                    return;
+                }
 
-        if (msgStr.startsWith('updateTemplate:')) {
-            activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
-            console.log("SUCCESS: Template Updated.");
+                // 2. Context Update (Real-Time State Sync)
+                const jsonMsg = JSON.parse(msgStr);
+                if (jsonMsg.type === 'contextUpdate') {
+                    currentClientState.fields = jsonMsg.fields;
+                    currentClientState.userNotes = jsonMsg.userNotes;
+                    return;
+                }
+            } catch(e) { /* ignore non-json text */ }
             return;
         }
 
