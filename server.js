@@ -73,7 +73,7 @@ wss.on('connection', (ws) => {
 
                 // [UPDATED] We prepend the CONTEXT_BLOCK to the prompt
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-2.0-flash-exp', // Updated to 2026 standard
+                    model: 'gemini-3.0-flash-exp', // Updated to 2026 standard
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
