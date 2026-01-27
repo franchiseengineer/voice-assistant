@@ -32,13 +32,12 @@ wss.on('connection', (ws) => {
         if (heartbeat) return;
         console.log("Gemini 3 Heartbeat Started.");
 
-        // FIX: Force the server to learn the fields immediately upon connection
-        if (typeof currentTemplate !== 'undefined' && currentTemplate.length > 0) {
-            socket.send(`updateTemplate:${JSON.stringify(currentTemplate)}`);
-        }
+        // FIX: Ensure activeTemplate is valid before proceeding
+        // (Removed the broken 'currentTemplate' block that used undefined 'socket')
         
         heartbeat = setInterval(async () => {
             if (slidingWindowTranscript.trim().length < 10) return;
+            if (activeTemplate.length === 0) return; // Don't run if no template is loaded
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
@@ -78,13 +77,10 @@ wss.on('connection', (ws) => {
 
                 // [UPDATED] We prepend the CONTEXT_BLOCK to the prompt
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', // Updated to 2026 standard
+                    model: 'gemini-2.0-flash-exp', // Adjusted for current environment availability
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
-                            thinkingConfig: {
-                                thinkingLevel: "MEDIUM"
-                            }, 
                             temperature: 0.2
                         }
                     },
@@ -98,11 +94,11 @@ wss.on('connection', (ws) => {
                 }
                 // -----------------------------------------
 
-                console.log("Gemini 3 Success"); // Reduced logging
+                console.log("Gemini Success"); // Reduced logging
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
-                console.error("Gemini 3 Error:", err.message);
+                console.error("Gemini Error:", err.message);
             } finally {
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
@@ -177,4 +173,4 @@ wss.on('connection', (ws) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Gemini 3 Server (GenAI) active on port ${PORT}`));
+server.listen(PORT, () => console.log(`Gemini Server active on port ${PORT}`));
