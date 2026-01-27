@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
-const { GoogleGenAI, SchemaType } = require("@google/genai"); 
+const { GoogleGenAI } = require("@google/genai");
 
 if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
     console.error("FATAL ERROR: API keys are missing. Check your .env file.");
@@ -18,26 +18,6 @@ app.use(express.static('Public'));
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-// Simplified schema - let's start basic
-const UPDATE_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    updates: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          fieldId: { type: SchemaType.STRING },
-          action: { type: SchemaType.STRING, enum: ["APPEND", "REPLACE"] },
-          value: { type: SchemaType.STRING }
-        },
-        required: ["fieldId", "action", "value"]
-      }
-    }
-  },
-  required: ["updates"]
-};
 
 wss.on('connection', (ws) => {
     console.log("========================================");
@@ -105,47 +85,46 @@ wss.on('connection', (ws) => {
                 console.log("Active Template IDs:", activeTemplate.map(f => f.id).join(', '));
                 console.log("Transcript preview:", slidingWindowTranscript.substring(0, 200) + "...");
                 
-                const SYSTEM_INSTRUCTION = `
-You are extracting information from a transcript into structured fields.
-
-TARGET FIELDS:
-${activeTemplate.map(f => `- ${f.id}: ${f.hint || f.name}`).join('\n')}
-
-RULES:
-1. Extract ONLY information that matches the field hints
-2. Use "APPEND" action to add bullet points starting with "* "
-3. Use "REPLACE" action only for single-value fields like Name or Date
-4. Output valid JSON matching the schema
-
-If no information matches any field, return: {"updates": []}
-`;
-
+                // Build current state
                 const currentData = {};
                 currentClientState.fields.forEach(f => {
-                    currentData[f.id] = f.currentValue || "";
+                    currentData[f.id] = f.currentValue || "(empty)";
                 });
 
-                const USER_PAYLOAD = `
-CURRENT DATA:
+                const PROMPT = `You are extracting information from a conversation transcript into structured fields.
+
+TARGET FIELDS:
+${activeTemplate.map(f => `- ID: "${f.id}" | Name: "${f.name}" | Hint: ${f.hint || 'Extract relevant info'}`).join('\n')}
+
+CURRENT DATA STATE:
 ${JSON.stringify(currentData, null, 2)}
 
 NEW TRANSCRIPT:
 "${slidingWindowTranscript}"
 
-Extract updates as JSON.
+INSTRUCTIONS:
+1. Extract ONLY information that matches each field's hint/purpose
+2. For narrative fields (like Summary, Notes), add bullet points starting with "* "
+3. For single-value fields (like Name, Date), provide the specific value
+4. If no new information for a field, output empty string ""
+
+OUTPUT FORMAT (JSON):
+Return a flat JSON object where keys are field IDs and values are the extracted content.
+Example: {"name": "John Doe", "summary": "* Discussed franchise opportunities\n* Interested in fitness industry", "date": "January 27, 2026"}
+
+If no information matches any fields, return empty object: {}
 `;
 
                 console.log("\n--- Calling Gemini API ---");
+                console.log("Prompt length:", PROMPT.length, "characters");
                 
                 const response = await aiClient.models.generateContent({
                     model: 'gemini-3.0-flash-exp',
                     config: {
                         responseMimeType: 'application/json',
-                        responseSchema: UPDATE_SCHEMA,
-                        generationConfig: { temperature: 0.2 },
-                        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
+                        generationConfig: { temperature: 0.2 }
                     },
-                    contents: [{ role: 'user', parts: [{ text: USER_PAYLOAD }] }]
+                    contents: [{ role: 'user', parts: [{ text: PROMPT }] }]
                 });
 
                 console.log("✓ API Response Received");
@@ -160,90 +139,91 @@ Extract updates as JSON.
                     partsLength: response.candidates?.[0]?.content?.parts?.length
                 });
 
-                let result = null;
+                let extractedData = null;
                 if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const rawText = response.candidates[0].content.parts[0].text;
                     console.log("Raw AI response:", rawText.substring(0, 500));
                     
                     try {
-                        result = JSON.parse(rawText);
+                        extractedData = JSON.parse(rawText);
                         console.log("✓ JSON parsed successfully");
                     } catch (parseErr) {
                         console.log("⚠ Direct parse failed, trying regex...");
                         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
-                            result = JSON.parse(jsonMatch[0]);
+                            extractedData = JSON.parse(jsonMatch[0]);
                             console.log("✓ JSON extracted via regex");
                         } else {
                             console.error("✗ No JSON found in response");
+                            console.error("Raw text was:", rawText);
                         }
                     }
                 } else {
                     console.error("✗ Response missing expected structure");
+                    console.error("Full response:", JSON.stringify(response, null, 2));
                 }
 
-                if (!result) {
-                    console.log("✗ FAILED: Could not extract result from AI response");
+                if (!extractedData) {
+                    console.log("✗ FAILED: Could not extract data from AI response");
                     return;
                 }
 
-                console.log("\n--- Processing Updates ---");
-                console.log("Updates received:", result.updates?.length || 0);
+                console.log("\n--- Processing Extracted Data ---");
+                console.log("Fields in response:", Object.keys(extractedData).join(', '));
                 
-                if (!result.updates || result.updates.length === 0) {
-                    console.log("ℹ No updates to apply");
+                if (Object.keys(extractedData).length === 0) {
+                    console.log("ℹ No data extracted");
                     return;
                 }
 
-                // Log each update
-                result.updates.forEach((update, idx) => {
-                    console.log(`\nUpdate ${idx + 1}:`);
-                    console.log(`  Field: ${update.fieldId}`);
-                    console.log(`  Action: ${update.action}`);
-                    console.log(`  Value: ${update.value?.substring(0, 100)}...`);
-                });
-
+                // Apply updates with deduplication
                 let changesMade = false;
                 
-                result.updates.forEach((update, idx) => {
-                    const field = currentClientState.fields.find(f => f.id === update.fieldId);
+                Object.keys(extractedData).forEach(fieldId => {
+                    const newValue = extractedData[fieldId];
+                    
+                    if (!newValue || newValue.trim() === "" || newValue === "(empty)") {
+                        console.log(`  ⏭ Skipping "${fieldId}" - empty value`);
+                        return;
+                    }
+                    
+                    const field = currentClientState.fields.find(f => f.id === fieldId);
                     
                     if (!field) {
-                        console.log(`  ⚠ Update ${idx + 1}: Field "${update.fieldId}" not found in client state`);
+                        console.log(`  ⚠ Field "${fieldId}" not found in client state`);
                         console.log(`     Available fields: ${currentClientState.fields.map(f => f.id).join(', ')}`);
                         return;
                     }
 
                     const oldValue = field.currentValue || "";
-                    let newValue = oldValue;
-
-                    if (update.action === "APPEND") {
-                        const cleanValue = update.value.trim();
+                    const cleanNewValue = newValue.trim();
+                    
+                    // Smart merge logic
+                    let finalValue = oldValue;
+                    
+                    if (oldValue === "") {
+                        // First time data - just set it
+                        finalValue = cleanNewValue;
+                        console.log(`  ✓ "${fieldId}": Initial value set`);
+                        console.log(`     Value: ${cleanNewValue.substring(0, 100)}...`);
+                    } else {
+                        // Check if it's a duplicate
+                        const oldLower = oldValue.toLowerCase();
+                        const newLower = cleanNewValue.toLowerCase();
                         
-                        // Simple dedup check
-                        if (oldValue.includes(cleanValue.replace(/^\*\s*/, ''))) {
-                            console.log(`  ⏭ Update ${idx + 1}: Duplicate detected, skipping`);
-                            return;
-                        }
-
-                        newValue = oldValue 
-                            ? oldValue + "\n" + cleanValue 
-                            : cleanValue;
-                        
-                        console.log(`  ✓ Update ${idx + 1}: APPEND successful`);
-                        
-                    } else if (update.action === "REPLACE") {
-                        if (oldValue === update.value.trim()) {
-                            console.log(`  ⏭ Update ${idx + 1}: No change needed`);
+                        if (oldLower.includes(newLower.replace(/^\*\s*/, ''))) {
+                            console.log(`  ⏭ "${fieldId}": Duplicate detected, skipping`);
                             return;
                         }
                         
-                        newValue = update.value.trim();
-                        console.log(`  ✓ Update ${idx + 1}: REPLACE successful`);
+                        // Append new content
+                        finalValue = oldValue + "\n" + cleanNewValue;
+                        console.log(`  ✓ "${fieldId}": Appended new content`);
+                        console.log(`     Added: ${cleanNewValue.substring(0, 100)}...`);
                     }
 
-                    if (newValue !== oldValue) {
-                        field.currentValue = newValue;
+                    if (finalValue !== oldValue) {
+                        field.currentValue = finalValue;
                         changesMade = true;
                     }
                 });
@@ -255,7 +235,7 @@ Extract updates as JSON.
                         return acc;
                     }, {});
                     
-                    console.log("Sending:", JSON.stringify(flatUpdate, null, 2));
+                    console.log("Sending update for fields:", Object.keys(flatUpdate).filter(k => flatUpdate[k]).join(', '));
                     ws.send(JSON.stringify({ type: 'templateUpdate', data: flatUpdate }));
                     console.log("✓ Updates sent successfully");
                 } else {
@@ -344,7 +324,8 @@ Extract updates as JSON.
                         console.log("   Field IDs:", activeTemplate.map(f => f.id).join(', '));
                         console.log("   Field Values:");
                         activeTemplate.forEach(f => {
-                            console.log(`     ${f.id}: "${(f.currentValue || '').substring(0, 50)}${f.currentValue && f.currentValue.length > 50 ? '...' : ''}"`);
+                            const val = f.currentValue || '';
+                            console.log(`     ${f.id}: "${val.substring(0, 50)}${val.length > 50 ? '...' : ''}"`);
                         });
                     }
                     return;
