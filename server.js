@@ -129,9 +129,11 @@ wss.on('connection', (ws) => {
         });
     };
 
-    ws.on('message', (message) => {
+    // [FIX] Updated signature to accept isBinary flag
+    ws.on('message', (message, isBinary) => {
         // [NEW] Handle JSON Context Updates safely
-        if (!Buffer.isBuffer(message)) {
+        // In 'ws' v8+, text messages come as Buffers but with isBinary=false
+        if (!isBinary) {
             try {
                 const msgStr = message.toString();
                 
@@ -162,7 +164,7 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        if (Buffer.isBuffer(message)) {
+        if (isBinary) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
             if (sessionAge > 55 || !dgConnection) {
                 if(dgConnection) dgConnection.finish();
