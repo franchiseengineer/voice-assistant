@@ -33,17 +33,13 @@ wss.on('connection', (ws) => {
         console.log("Gemini 3 Heartbeat Started.");
         
         heartbeat = setInterval(async () => {
-            if (slidingWindowTranscript.trim().length < 10) return;
-            
-            // Critical Check: If this is empty, the loop aborts and "Analyzing" never happens.
-            if (activeTemplate.length === 0) {
-                // Try to recover from client state if possible
-                if (currentClientState.fields.length > 0) {
-                     activeTemplate = currentClientState.fields;
-                } else {
-                     return; 
-                }
+            // FIX: If activeTemplate is empty, try to populate it from the client state
+            // This ensures the loop doesn't abort if the client sent 'contextUpdate' instead of 'updateTemplate'
+            if (activeTemplate.length === 0 && currentClientState.fields.length > 0) {
+                 activeTemplate = currentClientState.fields;
             }
+
+            if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
@@ -81,13 +77,16 @@ wss.on('connection', (ws) => {
                 `;
                 // -----------------------------------------
 
-                // [UPDATED] We prepend the CONTEXT_BLOCK to the prompt
+                // [UPDATED] Prepend Context, but keep YOUR Model & Config
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', // Restored to 2026 standard
+                    model: 'gemini-3.0-flash-exp', // Updated to 2026 standard
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
-                            temperature: 0.2
+                            thinkingConfig: {
+                                thinkingLevel: "MEDIUM" 
+                            }, 
+                            temperature: 1.0
                         }
                     },
                     contents: [{ role: 'user', parts: [{ text: CONTEXT_BLOCK + "\n" + ASSISTANT_PROMPT }] }]
@@ -100,11 +99,11 @@ wss.on('connection', (ws) => {
                 }
                 // -----------------------------------------
 
-                console.log("Gemini Success"); // Reduced logging
+                console.log("Gemini 3 Success"); 
                 ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
 
             } catch (err) {
-                console.error("Gemini Error:", err.message);
+                console.error("Gemini 3 Error:", err.message);
             } finally {
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
@@ -124,7 +123,7 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
                 slidingWindowTranscript += " " + labeledText;
                 
-                // [NEW] Safety cap to prevent memory issues
+                // [NEW] Safety cap 
                 if(slidingWindowTranscript.length > 50000) slidingWindowTranscript = slidingWindowTranscript.slice(-40000);
             }
         });
@@ -139,7 +138,7 @@ wss.on('connection', (ws) => {
                 // 1. Template Update (Legacy/Startup)
                 if (msgStr.startsWith('updateTemplate:')) {
                     activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
-                    // Initialize state if empty so we don't start null
+                    // Initialize state if empty
                     if(currentClientState.fields.length === 0) {
                          currentClientState.fields = activeTemplate.map(f => ({...f, currentValue: ''}));
                     }
@@ -152,10 +151,9 @@ wss.on('connection', (ws) => {
                 if (jsonMsg.type === 'contextUpdate') {
                     currentClientState.fields = jsonMsg.fields;
                     currentClientState.userNotes = jsonMsg.userNotes;
-                    
-                    // FIX: Also update activeTemplate so the heartbeat loop knows what to generate
-                    // This was the missing link causing "Never Analyzing"
-                    if (jsonMsg.fields && Array.isArray(jsonMsg.fields) && jsonMsg.fields.length > 0) {
+
+                    // FIX: Also sync activeTemplate so the heartbeat loop knows we have a valid template
+                    if (activeTemplate.length === 0 && jsonMsg.fields.length > 0) {
                         activeTemplate = jsonMsg.fields;
                     }
                     return;
@@ -185,4 +183,4 @@ wss.on('connection', (ws) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Gemini Server active on port ${PORT}`));
+server.listen(PORT, () => console.log(`Gemini 3 Server (GenAI) active on port ${PORT}`));
