@@ -31,6 +31,11 @@ wss.on('connection', (ws) => {
     const startHeartbeat = () => {
         if (heartbeat) return;
         console.log("Gemini 3 Heartbeat Started.");
+
+        // FIX: Force the server to learn the fields immediately upon connection
+        if (typeof currentTemplate !== 'undefined' && currentTemplate.length > 0) {
+            socket.send(`updateTemplate:${JSON.stringify(currentTemplate)}`);
+        }
         
         heartbeat = setInterval(async () => {
             if (slidingWindowTranscript.trim().length < 10) return;
