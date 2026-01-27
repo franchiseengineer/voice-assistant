@@ -31,13 +31,19 @@ wss.on('connection', (ws) => {
     const startHeartbeat = () => {
         if (heartbeat) return;
         console.log("Gemini 3 Heartbeat Started.");
-
-        // FIX: Ensure activeTemplate is valid before proceeding
-        // (Removed the broken 'currentTemplate' block that used undefined 'socket')
         
         heartbeat = setInterval(async () => {
             if (slidingWindowTranscript.trim().length < 10) return;
-            if (activeTemplate.length === 0) return; // Don't run if no template is loaded
+            
+            // Critical Check: If this is empty, the loop aborts and "Analyzing" never happens.
+            if (activeTemplate.length === 0) {
+                // Try to recover from client state if possible
+                if (currentClientState.fields.length > 0) {
+                     activeTemplate = currentClientState.fields;
+                } else {
+                     return; 
+                }
+            }
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
@@ -77,7 +83,7 @@ wss.on('connection', (ws) => {
 
                 // [UPDATED] We prepend the CONTEXT_BLOCK to the prompt
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', // Adjusted for current environment availability
+                    model: 'gemini-3.0-flash-exp', // Restored to 2026 standard
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
@@ -146,6 +152,12 @@ wss.on('connection', (ws) => {
                 if (jsonMsg.type === 'contextUpdate') {
                     currentClientState.fields = jsonMsg.fields;
                     currentClientState.userNotes = jsonMsg.userNotes;
+                    
+                    // FIX: Also update activeTemplate so the heartbeat loop knows what to generate
+                    // This was the missing link causing "Never Analyzing"
+                    if (jsonMsg.fields && Array.isArray(jsonMsg.fields) && jsonMsg.fields.length > 0) {
+                        activeTemplate = jsonMsg.fields;
+                    }
                     return;
                 }
             } catch(e) { /* ignore non-json text */ }
