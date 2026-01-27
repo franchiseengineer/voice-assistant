@@ -149,7 +149,7 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                 console.log(`🔄 Analyzing ${newContent.length} chars of new transcript...`);
 
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', 
+                    model: 'gemini-3-flash-preview', 
                     config: {
                         responseMimeType: 'application/json',
                         responseSchema: UPDATE_SCHEMA,
