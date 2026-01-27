@@ -19,8 +19,7 @@ app.use(express.static('Public'));
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// --- ENHANCED SCHEMA DEFINITION ---
-// Forces the AI to output structured, deduplication-friendly updates
+// Simplified schema - let's start basic
 const UPDATE_SCHEMA = {
   type: SchemaType.OBJECT,
   properties: {
@@ -29,23 +28,9 @@ const UPDATE_SCHEMA = {
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          fieldId: { 
-            type: SchemaType.STRING, 
-            description: "The exact ID of the field to update (must match template IDs)." 
-          },
-          action: { 
-            type: SchemaType.STRING, 
-            enum: ["APPEND", "REPLACE", "SKIP"], 
-            description: "APPEND: Add new bullet point to existing notes. REPLACE: Overwrite entire field (use only for corrections or single-value fields like Name/Date). SKIP: No update needed for this field." 
-          },
-          value: { 
-            type: SchemaType.STRING, 
-            description: "The new content. For APPEND, start with '* '. For REPLACE, provide complete new value. For SKIP, leave empty." 
-          },
-          reason: {
-            type: SchemaType.STRING,
-            description: "Brief explanation of why this update is needed (helps with debugging)."
-          }
+          fieldId: { type: SchemaType.STRING },
+          action: { type: SchemaType.STRING, enum: ["APPEND", "REPLACE"] },
+          value: { type: SchemaType.STRING }
         },
         required: ["fieldId", "action", "value"]
       }
@@ -55,154 +40,177 @@ const UPDATE_SCHEMA = {
 };
 
 wss.on('connection', (ws) => {
+    console.log("========================================");
+    console.log("NEW CLIENT CONNECTED");
+    console.log("========================================");
+    
     let dgConnection = null; 
     let activeTemplate = []; 
     let currentClientState = { fields: [], userNotes: "" };
     let slidingWindowTranscript = ""; 
-    let processedTranscriptLength = 0; // Track what we've already analyzed
     let heartbeat = null;
     let connectionStartTime = Date.now();
     let isProcessing = false;
+    let heartbeatCount = 0;
 
     const startHeartbeat = () => {
         if (heartbeat) return;
-        console.log("✓ Heartbeat Started (Delta Pattern v2)");
+        console.log("✓ HEARTBEAT STARTED");
         
         heartbeat = setInterval(async () => {
-            // Guard Clauses
+            heartbeatCount++;
+            console.log(`\n========== HEARTBEAT #${heartbeatCount} ==========`);
+            console.log(`Time: ${new Date().toLocaleTimeString()}`);
+            
+            // Detailed diagnostic output
+            console.log(`Template Status: ${activeTemplate.length > 0 ? `✓ ${activeTemplate.length} fields` : '✗ EMPTY'}`);
+            console.log(`Transcript Length: ${slidingWindowTranscript.length} chars`);
+            console.log(`Client State Fields: ${currentClientState.fields.length}`);
+            console.log(`Is Processing: ${isProcessing}`);
+            
+            // Guard 1: Template check
             if (activeTemplate.length === 0) {
-                // Try to recover from client state
+                console.log("⚠ BLOCKED: No template data");
                 if (currentClientState.fields.length > 0) {
+                    console.log("   Attempting recovery from client state...");
                     activeTemplate = currentClientState.fields;
-                    console.log(`✓ Recovered template from client state: ${activeTemplate.length} fields`);
+                    console.log(`   ✓ Recovered ${activeTemplate.length} fields`);
                 } else {
-                    console.log("⏸ Waiting for template data...");
+                    console.log("   ✗ Client state also empty. Waiting...");
                     return;
                 }
             }
             
-            // Only process NEW transcript content
-            const newContent = slidingWindowTranscript.slice(processedTranscriptLength);
-            if (newContent.trim().length < 10) return;
-            
-            if (isProcessing) {
-                console.log("⏸ Already processing, skipping this cycle");
+            // Guard 2: Transcript check
+            if (slidingWindowTranscript.trim().length < 10) {
+                console.log("⚠ BLOCKED: Transcript too short");
+                console.log(`   Current: "${slidingWindowTranscript.substring(0, 50)}"`);
                 return;
             }
             
+            // Guard 3: Processing lock
+            if (isProcessing) {
+                console.log("⚠ BLOCKED: Already processing");
+                return;
+            }
+            
+            console.log("✓ ALL GUARDS PASSED - STARTING AI CALL");
             isProcessing = true;
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
-                // [RESTORED] Your Original Prompt Logic + Delta Instructions
+                console.log("\n--- Building AI Request ---");
+                
+                // Show what we're sending to the AI
+                console.log("Active Template IDs:", activeTemplate.map(f => f.id).join(', '));
+                console.log("Transcript preview:", slidingWindowTranscript.substring(0, 200) + "...");
+                
                 const SYSTEM_INSTRUCTION = `
-You are a professional assistant creating a clean, scannable knowledge base.
-Your goal is to analyze the NEW transcript segment and produce a clean, factual report by generating specific UPDATES for the database.
+You are extracting information from a transcript into structured fields.
 
-### TARGET FIELDS
-${activeTemplate.map(f => `- ID: "${f.id}" | Name: "${f.name}" | Hint: ${f.hint}`).join('\n')}
+TARGET FIELDS:
+${activeTemplate.map(f => `- ${f.id}: ${f.hint || f.name}`).join('\n')}
 
-### STRICT PERSONA & CONTENT RULES
-1. **NO SPEAKER LABELS**: Do not use phrases like "Speaker 1 says" or "According to Speaker 0." State information as objective facts.
-2. **MULTIPLE PERSPECTIVES**: If viewpoints differ, describe the range of ideas neutrally (e.g., "Perspectives on wealth acquisition vary...").
-3. **FACTUAL RECORD**: Organize the transcript into factual, bulleted notes for each field.
-4. **SURGICAL EXTRACTION**: If a field is "Name," look ONLY for a person's actual name. If "Date," look ONLY for a specific calendar date.
-5. **NEGATIVE CONSTRAINT**: Do NOT summarize unrelated themes into these fields. Use action "SKIP" if the transcript does not contain specific information for a field.
-6. **NO FILLER**: Redact all "ums," "ahs," and conversational repetition.
+RULES:
+1. Extract ONLY information that matches the field hints
+2. Use "APPEND" action to add bullet points starting with "* "
+3. Use "REPLACE" action only for single-value fields like Name or Date
+4. Output valid JSON matching the schema
 
-### MERGE INTELLIGENCE & FORMATTING
-1. **BULLETED NOTES ONLY**: For narrative fields (APPEND action), every point must be a separate bullet starting with "* ".
-2. **Use APPEND** for: lists, summaries, multi-point discussions.
-3. **Use REPLACE** only for: corrections, single-value fields (names, dates, specific numbers).
-4. **Use SKIP** when: no new information, or information doesn't match any field.
-
-### DEDUPLICATION STRATEGY
-Before adding a bullet point, check if the SAME IDEA (not exact words) is already present in the Current Database State.
-If discussing the same topic with more detail, APPEND the new detail.
-If stating the same fact, use SKIP.
+If no information matches any field, return: {"updates": []}
 `;
 
-                // Build the payload with current state
-                const currentStateSnapshot = currentClientState.fields.reduce((acc, f) => {
-                    acc[f.id] = {
-                        name: f.name,
-                        currentValue: f.currentValue || "(empty)",
-                        charCount: (f.currentValue || "").length
-                    };
-                    return acc;
-                }, {});
+                const currentData = {};
+                currentClientState.fields.forEach(f => {
+                    currentData[f.id] = f.currentValue || "";
+                });
 
                 const USER_PAYLOAD = `
-### CURRENT DATABASE STATE
-${JSON.stringify(currentStateSnapshot, null, 2)}
+CURRENT DATA:
+${JSON.stringify(currentData, null, 2)}
 
-### USER MANUAL NOTES (DO NOT MODIFY)
-${currentClientState.userNotes || "(none)"}
+NEW TRANSCRIPT:
+"${slidingWindowTranscript}"
 
-### NEW TRANSCRIPT SEGMENT (Only process this)
-"${newContent}"
-
-### OUTPUT
-Generate the JSON update list. Be conservative - when in doubt, SKIP rather than duplicate.
+Extract updates as JSON.
 `;
 
-                console.log(`🔄 Analyzing ${newContent.length} chars of new transcript...`);
-
+                console.log("\n--- Calling Gemini API ---");
+                
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', 
+                    model: 'gemini-3.0-flash-exp',
                     config: {
                         responseMimeType: 'application/json',
                         responseSchema: UPDATE_SCHEMA,
-                        generationConfig: { 
-                            temperature: 0.1, // Very low for consistency
-                            topP: 0.8,
-                            topK: 20
-                        },
+                        generationConfig: { temperature: 0.2 },
                         systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
                     },
                     contents: [{ role: 'user', parts: [{ text: USER_PAYLOAD }] }]
                 });
 
-                // Robust JSON extraction
+                console.log("✓ API Response Received");
+                
+                // Detailed response inspection
+                console.log("\n--- Parsing Response ---");
+                console.log("Response structure:", {
+                    hasCandidates: !!response.candidates,
+                    candidatesLength: response.candidates?.length,
+                    hasContent: !!response.candidates?.[0]?.content,
+                    hasParts: !!response.candidates?.[0]?.content?.parts,
+                    partsLength: response.candidates?.[0]?.content?.parts?.length
+                });
+
                 let result = null;
                 if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const rawText = response.candidates[0].content.parts[0].text;
+                    console.log("Raw AI response:", rawText.substring(0, 500));
                     
-                    // Try direct parse first
                     try {
                         result = JSON.parse(rawText);
-                    } catch {
-                        // Fallback: extract JSON from markdown or mixed content
+                        console.log("✓ JSON parsed successfully");
+                    } catch (parseErr) {
+                        console.log("⚠ Direct parse failed, trying regex...");
                         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
                             result = JSON.parse(jsonMatch[0]);
+                            console.log("✓ JSON extracted via regex");
+                        } else {
+                            console.error("✗ No JSON found in response");
                         }
                     }
+                } else {
+                    console.error("✗ Response missing expected structure");
                 }
 
-                if (!result || !result.updates) {
-                    console.log("⚠ No valid updates returned");
-                    processedTranscriptLength = slidingWindowTranscript.length;
+                if (!result) {
+                    console.log("✗ FAILED: Could not extract result from AI response");
                     return;
                 }
 
-                // Apply Delta Updates with Enhanced Deduplication
-                const updates = result.updates.filter(u => u.action !== "SKIP");
+                console.log("\n--- Processing Updates ---");
+                console.log("Updates received:", result.updates?.length || 0);
                 
-                if (updates.length === 0) {
-                    console.log("✓ No changes needed (all updates were SKIP)");
-                    processedTranscriptLength = slidingWindowTranscript.length;
+                if (!result.updates || result.updates.length === 0) {
+                    console.log("ℹ No updates to apply");
                     return;
                 }
 
-                console.log(`📝 Processing ${updates.length} updates:`);
+                // Log each update
+                result.updates.forEach((update, idx) => {
+                    console.log(`\nUpdate ${idx + 1}:`);
+                    console.log(`  Field: ${update.fieldId}`);
+                    console.log(`  Action: ${update.action}`);
+                    console.log(`  Value: ${update.value?.substring(0, 100)}...`);
+                });
+
                 let changesMade = false;
                 
-                updates.forEach((update, idx) => {
+                result.updates.forEach((update, idx) => {
                     const field = currentClientState.fields.find(f => f.id === update.fieldId);
                     
                     if (!field) {
-                        console.log(`  ${idx + 1}. ⚠ Field "${update.fieldId}" not found - skipping`);
+                        console.log(`  ⚠ Update ${idx + 1}: Field "${update.fieldId}" not found in client state`);
+                        console.log(`     Available fields: ${currentClientState.fields.map(f => f.id).join(', ')}`);
                         return;
                     }
 
@@ -210,33 +218,28 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                     let newValue = oldValue;
 
                     if (update.action === "APPEND") {
-                        // Enhanced deduplication: Check for semantic duplicates
                         const cleanValue = update.value.trim();
-                        const cleanExisting = oldValue.toLowerCase().trim();
-                        const cleanNew = cleanValue.toLowerCase().trim();
                         
-                        // Simple duplicate check: if exact phrase exists, skip
-                        if (cleanExisting.includes(cleanNew.replace(/^\*\s*/, ''))) {
-                            console.log(`  ${idx + 1}. ⏭ Duplicate detected in "${field.name}" - skipping`);
+                        // Simple dedup check
+                        if (oldValue.includes(cleanValue.replace(/^\*\s*/, ''))) {
+                            console.log(`  ⏭ Update ${idx + 1}: Duplicate detected, skipping`);
                             return;
                         }
 
-                        // Append with proper formatting
                         newValue = oldValue 
                             ? oldValue + "\n" + cleanValue 
                             : cleanValue;
                         
-                        console.log(`  ${idx + 1}. ➕ APPEND to "${field.name}": ${cleanValue.substring(0, 50)}...`);
+                        console.log(`  ✓ Update ${idx + 1}: APPEND successful`);
                         
                     } else if (update.action === "REPLACE") {
-                        // Only replace if actually different
                         if (oldValue === update.value.trim()) {
-                            console.log(`  ${idx + 1}. ⏭ No change needed in "${field.name}"`);
+                            console.log(`  ⏭ Update ${idx + 1}: No change needed`);
                             return;
                         }
                         
                         newValue = update.value.trim();
-                        console.log(`  ${idx + 1}. 🔄 REPLACE "${field.name}": ${oldValue.substring(0, 30)}... → ${newValue.substring(0, 30)}...`);
+                        console.log(`  ✓ Update ${idx + 1}: REPLACE successful`);
                     }
 
                     if (newValue !== oldValue) {
@@ -245,34 +248,35 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                     }
                 });
 
-                // Sync to client if changes were made
                 if (changesMade) {
+                    console.log("\n--- Sending Updates to Client ---");
                     const flatUpdate = currentClientState.fields.reduce((acc, f) => {
                         acc[f.id] = f.currentValue;
                         return acc;
                     }, {});
                     
+                    console.log("Sending:", JSON.stringify(flatUpdate, null, 2));
                     ws.send(JSON.stringify({ type: 'templateUpdate', data: flatUpdate }));
-                    console.log("✓ Updates sent to client");
+                    console.log("✓ Updates sent successfully");
                 } else {
-                    console.log("✓ No actual changes after deduplication");
+                    console.log("\nℹ No changes made after deduplication");
                 }
 
-                // Mark this content as processed
-                processedTranscriptLength = slidingWindowTranscript.length;
-
             } catch (err) {
-                console.error("❌ Gemini Error:", err.message);
-                if (err.stack) console.error(err.stack);
+                console.error("\n❌ ERROR CAUGHT:");
+                console.error("Message:", err.message);
+                console.error("Stack:", err.stack);
                 ws.send(JSON.stringify({ type: 'error', message: err.message }));
             } finally {
                 isProcessing = false;
                 ws.send(JSON.stringify({ type: 'status', active: false }));
+                console.log("\n========== HEARTBEAT END ==========\n");
             }
         }, 10000); 
     };
 
     const setupDeepgram = () => {
+        console.log("Setting up Deepgram connection...");
         dgConnection = deepgram.listen.live({
             model: "nova-2", 
             language: "en-US", 
@@ -287,17 +291,13 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript && data.is_final) {
                 const labeledText = `[Speaker ${data.channel.alternatives[0].words[0]?.speaker ?? 0}] ${transcript}`;
+                console.log("📝 Transcript:", labeledText);
                 ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
                 slidingWindowTranscript += " " + labeledText;
                 
-                // Safety cap with warning
                 if (slidingWindowTranscript.length > 50000) {
-                    console.log("⚠ Transcript exceeding 50k chars, trimming oldest content");
+                    console.log("⚠ Trimming transcript (exceeded 50k chars)");
                     slidingWindowTranscript = slidingWindowTranscript.slice(-40000);
-                    // Adjust processed pointer to match
-                    if (processedTranscriptLength > 40000) {
-                        processedTranscriptLength = 40000;
-                    }
                 }
             }
         });
@@ -305,17 +305,17 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
         dgConnection.on('error', (err) => {
             console.error("❌ Deepgram Error:", err);
         });
+        
+        console.log("✓ Deepgram setup complete");
     };
 
     ws.on('message', (message, isBinary) => {
-        // Robust binary detection
         const isMsgBinary = isBinary || (Buffer.isBuffer(message) && (message.length > 0 && message[0] !== 123)); 
         
         if (!isMsgBinary) {
             try {
                 const msgStr = message.toString();
                 
-                // Legacy template initialization
                 if (msgStr.startsWith('updateTemplate:')) {
                     activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
                     if (currentClientState.fields.length === 0) {
@@ -324,55 +324,52 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                             currentValue: ''
                         }));
                     }
-                    console.log(`✓ Template initialized: ${activeTemplate.length} fields`);
+                    console.log(`✓ Template initialized via legacy method: ${activeTemplate.length} fields`);
+                    console.log("   Fields:", activeTemplate.map(f => f.id).join(', '));
                     return;
                 }
 
-                // Real-time context sync (CRITICAL for context awareness)
                 const jsonMsg = JSON.parse(msgStr);
                 if (jsonMsg.type === 'contextUpdate') {
+                    console.log("\n--- Context Update Received ---");
+                    console.log("Fields count:", jsonMsg.fields?.length || 0);
+                    console.log("User notes present:", !!jsonMsg.userNotes);
+                    
                     currentClientState.fields = jsonMsg.fields;
                     currentClientState.userNotes = jsonMsg.userNotes;
 
-                    // Always sync activeTemplate when we get valid field data
                     if (jsonMsg.fields && jsonMsg.fields.length > 0) {
-                        
-                        // [NEW] Smart Reset: Check if fields changed
-                        // This allows retro-active analysis if user adds a field mid-stream
-                        const oldIds = activeTemplate.map(f => f.id).sort().join(',');
-                        const newIds = jsonMsg.fields.map(f => f.id).sort().join(',');
-                        
-                        if (oldIds !== newIds) {
-                            console.log("🔄 Field structure changed! Resetting cursor to analyze full transcript...");
-                            processedTranscriptLength = 0; // The Reset
-                        }
-
                         activeTemplate = jsonMsg.fields;
-                        console.log(`✓ Context synced: ${activeTemplate.length} fields | Notes: ${currentClientState.userNotes ? 'Yes' : 'No'}`);
+                        console.log(`✓ Active template synced: ${activeTemplate.length} fields`);
+                        console.log("   Field IDs:", activeTemplate.map(f => f.id).join(', '));
+                        console.log("   Field Values:");
+                        activeTemplate.forEach(f => {
+                            console.log(`     ${f.id}: "${(f.currentValue || '').substring(0, 50)}${f.currentValue && f.currentValue.length > 50 ? '...' : ''}"`);
+                        });
                     }
                     return;
                 }
             } catch(e) { 
-                // Silently ignore non-JSON messages
+                // Silently ignore non-JSON
             }
             return;
         }
 
-        // Handle audio stream
         if (isMsgBinary) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
             
-            // Refresh Deepgram connection every 55 minutes (prevents timeout)
             if (sessionAge > 55 || !dgConnection) {
                 if (dgConnection) {
-                    console.log("🔄 Refreshing Deepgram connection...");
+                    console.log("🔄 Refreshing Deepgram connection (55min timeout)");
                     dgConnection.finish();
                 }
                 setupDeepgram();
                 connectionStartTime = Date.now();
                 
-                // Start heartbeat on first audio
-                if (!heartbeat) startHeartbeat();
+                if (!heartbeat) {
+                    console.log("Starting heartbeat (triggered by first audio)");
+                    startHeartbeat();
+                }
             }
             
             if (dgConnection && dgConnection.getReadyState() === 1) {
@@ -393,4 +390,4 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Gemini Delta Server v2 active on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ DIAGNOSTIC SERVER active on port ${PORT}`));
