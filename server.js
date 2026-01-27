@@ -47,11 +47,12 @@ wss.on('connection', (ws) => {
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
-                // [NEW] Build Context Block. 
+                // [NEW] Build Context Block (Safely Escaped)
+                // JSON.stringify handles quotes/newlines inside the values so the prompt doesn't break
                 const CONTEXT_BLOCK = `
                 ### CURRENT KNOWLEDGE STATE (Context)
                 Use this to merge new facts. If the new transcript is silent on a topic, PRESERVE these values:
-                User Manual Notes: "${currentClientState.userNotes || ''}"
+                User Manual Notes: ${JSON.stringify(currentClientState.userNotes || "")}
                 Current Field Values: ${JSON.stringify(currentClientState.fields.map(f => ({ id: f.id, val: f.currentValue })))}
                 
                 ### INSTRUCTIONS`;
@@ -83,10 +84,8 @@ wss.on('connection', (ws) => {
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: {
-                            thinkingConfig: {
-                                thinkingLevel: "MEDIUM" 
-                            }, 
-                            temperature: 1.0
+                            // REMOVED thinkingConfig: It often causes 400 Bad Request on Flash models
+                            temperature: 0.2 // Lower temperature for more consistent extraction
                         }
                     },
                     contents: [{ role: 'user', parts: [{ text: CONTEXT_BLOCK + "\n" + ASSISTANT_PROMPT }] }]
@@ -98,9 +97,7 @@ wss.on('connection', (ws) => {
                      text = response.candidates[0].content.parts[0].text;
                 }
                 
-                // [NEW] Robust JSON Extraction (Fixes the "Blip")
-                // Models with "Thinking" often output text/markdown before the JSON.
-                // We find the first '{' and the last '}' to extract just the JSON.
+                // [NEW] Robust JSON Extraction
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     text = jsonMatch[0];
@@ -112,6 +109,8 @@ wss.on('connection', (ws) => {
 
             } catch (err) {
                 console.error("Gemini 3 Error:", err.message);
+                // [NEW] Send error to client so you can see it in the UI
+                ws.send(JSON.stringify({ type: 'error', message: err.message }));
             } finally {
                 isProcessing = false;
                 ws.send(JSON.stringify({ type: 'status', active: false }));
@@ -140,9 +139,11 @@ wss.on('connection', (ws) => {
 
     // [FIX] Updated signature to accept isBinary flag
     ws.on('message', (message, isBinary) => {
-        // [NEW] Handle JSON Context Updates safely
-        // In 'ws' v8+, text messages come as Buffers but with isBinary=false
-        if (!isBinary) {
+        // [NEW] Robust Binary Check: Works even if 'ws' version doesn't pass isBinary
+        const isMsgBinary = isBinary || (Buffer.isBuffer(message) && (message.length > 0 && message[0] !== 123)); // 123 is '{'
+        
+        // Handle JSON Context Updates
+        if (!isMsgBinary) {
             try {
                 const msgStr = message.toString();
                 
@@ -173,7 +174,8 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        if (isBinary) {
+        // Handle Audio
+        if (isMsgBinary) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
             if (sessionAge > 55 || !dgConnection) {
                 if(dgConnection) dgConnection.finish();
