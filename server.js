@@ -119,7 +119,7 @@ If no information matches any fields, return empty object: {}
                 console.log("Prompt length:", PROMPT.length, "characters");
                 
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp',
+                    model: 'gemini-2.0-flash-exp',
                     config: {
                         responseMimeType: 'application/json',
                         generationConfig: { temperature: 0.2 }
