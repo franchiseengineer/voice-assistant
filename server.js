@@ -33,7 +33,7 @@ wss.on('connection', (ws) => {
         console.log("Gemini 3 Heartbeat Started.");
         
         heartbeat = setInterval(async () => {
-            if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
+            if (slidingWindowTranscript.trim().length < 10) return;
             
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
