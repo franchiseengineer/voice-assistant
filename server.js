@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
-const { GoogleGenAI } = require("@google/genai"); // Modern SDK
+const { GoogleGenAI, SchemaType } = require("@google/genai"); 
 
 if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
     console.error("FATAL ERROR: API keys are missing. Check your .env file.");
@@ -19,97 +19,251 @@ app.use(express.static('Public'));
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// --- ENHANCED SCHEMA DEFINITION ---
+// Forces the AI to output structured, deduplication-friendly updates
+const UPDATE_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    updates: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          fieldId: { 
+            type: SchemaType.STRING, 
+            description: "The exact ID of the field to update (must match template IDs)." 
+          },
+          action: { 
+            type: SchemaType.STRING, 
+            enum: ["APPEND", "REPLACE", "SKIP"], 
+            description: "APPEND: Add new bullet point to existing notes. REPLACE: Overwrite entire field (use only for corrections or single-value fields like Name/Date). SKIP: No update needed for this field." 
+          },
+          value: { 
+            type: SchemaType.STRING, 
+            description: "The new content. For APPEND, start with '* '. For REPLACE, provide complete new value. For SKIP, leave empty." 
+          },
+          reason: {
+            type: SchemaType.STRING,
+            description: "Brief explanation of why this update is needed (helps with debugging)."
+          }
+        },
+        required: ["fieldId", "action", "value"]
+      }
+    }
+  },
+  required: ["updates"]
+};
+
 wss.on('connection', (ws) => {
     let dgConnection = null; 
     let activeTemplate = []; 
-    // [NEW] Track client state to prevent overwriting
     let currentClientState = { fields: [], userNotes: "" };
     let slidingWindowTranscript = ""; 
+    let processedTranscriptLength = 0; // Track what we've already analyzed
     let heartbeat = null;
     let connectionStartTime = Date.now();
-    let isProcessing = false; // [NEW] Prevent overlapping requests
+    let isProcessing = false;
 
     const startHeartbeat = () => {
         if (heartbeat) return;
-        console.log("Gemini 3 Heartbeat Started.");
+        console.log("✓ Heartbeat Started (Delta Pattern v2)");
         
         heartbeat = setInterval(async () => {
-            // FIX: If activeTemplate is empty, try to populate it from the client state
-            if (activeTemplate.length === 0 && currentClientState.fields.length > 0) {
-                 activeTemplate = currentClientState.fields;
+            // Guard Clauses
+            if (activeTemplate.length === 0) {
+                // Try to recover from client state
+                if (currentClientState.fields.length > 0) {
+                    activeTemplate = currentClientState.fields;
+                    console.log(`✓ Recovered template from client state: ${activeTemplate.length} fields`);
+                } else {
+                    console.log("⏸ Waiting for template data...");
+                    return;
+                }
             }
-
-            // Guards
-            if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
-            if (isProcessing) return; // [NEW] Don't start if already busy
+            
+            // Only process NEW transcript content
+            const newContent = slidingWindowTranscript.slice(processedTranscriptLength);
+            if (newContent.trim().length < 10) return;
+            
+            if (isProcessing) {
+                console.log("⏸ Already processing, skipping this cycle");
+                return;
+            }
             
             isProcessing = true;
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
-                // [NEW] Build Context Block (Safely Escaped)
-                // JSON.stringify handles quotes/newlines inside the values so the prompt doesn't break
-                const CONTEXT_BLOCK = `
-                ### CURRENT KNOWLEDGE STATE (Context)
-                Use this to merge new facts. If the new transcript is silent on a topic, PRESERVE these values:
-                User Manual Notes: ${JSON.stringify(currentClientState.userNotes || "")}
-                Current Field Values: ${JSON.stringify(currentClientState.fields.map(f => ({ id: f.id, val: f.currentValue })))}
-                
-                ### INSTRUCTIONS`;
+                // [RESTORED] Your Original Prompt Logic + Delta Instructions
+                const SYSTEM_INSTRUCTION = `
+You are a professional assistant creating a clean, scannable knowledge base.
+Your goal is to analyze the NEW transcript segment and produce a clean, factual report by generating specific UPDATES for the database.
 
-                const ASSISTANT_PROMPT = `
-                You are a professional assistant creating a clean, scannable knowledge base. 
-                Your goal is to produce a clean, factual report based on the provided transcript.
+### TARGET FIELDS
+${activeTemplate.map(f => `- ID: "${f.id}" | Name: "${f.name}" | Hint: ${f.hint}`).join('\n')}
 
-                STRICT PERSONA & CONTENT RULES:
-                1. NO SPEAKER LABELS: Do not use phrases like "Speaker 1 says" or "According to Speaker 0." State information as objective facts.
-                2. MULTIPLE PERSPECTIVES: If viewpoints differ, describe the range of ideas neutrally (e.g., "Perspectives on wealth acquisition vary...").
-                3. FACTUAL RECORD: Organize the transcript into factual, bulleted notes for each field.
-                4. SURGICAL EXTRACTION: If a field is "Name," look ONLY for a person's actual name. If "Date," look ONLY for a specific calendar date. 
-                5. NEGATIVE CONSTRAINT: If the transcript does not contain the specific information for a field, leave that field value as an empty string "". Do NOT summarize unrelated themes into these fields.
+### STRICT PERSONA & CONTENT RULES
+1. **NO SPEAKER LABELS**: Do not use phrases like "Speaker 1 says" or "According to Speaker 0." State information as objective facts.
+2. **MULTIPLE PERSPECTIVES**: If viewpoints differ, describe the range of ideas neutrally (e.g., "Perspectives on wealth acquisition vary...").
+3. **FACTUAL RECORD**: Organize the transcript into factual, bulleted notes for each field.
+4. **SURGICAL EXTRACTION**: If a field is "Name," look ONLY for a person's actual name. If "Date," look ONLY for a specific calendar date.
+5. **NEGATIVE CONSTRAINT**: Do NOT summarize unrelated themes into these fields. Use action "SKIP" if the transcript does not contain specific information for a field.
+6. **NO FILLER**: Redact all "ums," "ahs," and conversational repetition.
 
-                STRICT FORMATTING RULES:
-                1. BULLETED NOTES ONLY: Every point must be a separate bullet starting with "* ".
-                2. NEW LINES: Every single bullet point MUST be on its own new line. No paragraphs or blocks of text.
-                3. NO FILLER: Redact all "ums," "ahs," and conversational repetition.
+### MERGE INTELLIGENCE & FORMATTING
+1. **BULLETED NOTES ONLY**: For narrative fields (APPEND action), every point must be a separate bullet starting with "* ".
+2. **Use APPEND** for: lists, summaries, multi-point discussions.
+3. **Use REPLACE** only for: corrections, single-value fields (names, dates, specific numbers).
+4. **Use SKIP** when: no new information, or information doesn't match any field.
 
-                TRANSCRIPT: "${slidingWindowTranscript}"
+### DEDUPLICATION STRATEGY
+Before adding a bullet point, check if the SAME IDEA (not exact words) is already present in the Current Database State.
+If discussing the same topic with more detail, APPEND the new detail.
+If stating the same fact, use SKIP.
+`;
 
-                OUTPUT: Return ONLY a flat JSON object where keys match these IDs: ${activeTemplate.map(f => f.id).join(', ')}.
-                `;
+                // Build the payload with current state
+                const currentStateSnapshot = currentClientState.fields.reduce((acc, f) => {
+                    acc[f.id] = {
+                        name: f.name,
+                        currentValue: f.currentValue || "(empty)",
+                        charCount: (f.currentValue || "").length
+                    };
+                    return acc;
+                }, {});
 
-                // [UPDATED] Prepend Context
+                const USER_PAYLOAD = `
+### CURRENT DATABASE STATE
+${JSON.stringify(currentStateSnapshot, null, 2)}
+
+### USER MANUAL NOTES (DO NOT MODIFY)
+${currentClientState.userNotes || "(none)"}
+
+### NEW TRANSCRIPT SEGMENT (Only process this)
+"${newContent}"
+
+### OUTPUT
+Generate the JSON update list. Be conservative - when in doubt, SKIP rather than duplicate.
+`;
+
+                console.log(`🔄 Analyzing ${newContent.length} chars of new transcript...`);
+
                 const response = await aiClient.models.generateContent({
-                    model: 'gemini-3.0-flash-exp', // Updated to 2026 standard
+                    model: 'gemini-3.0-flash-exp', 
                     config: {
                         responseMimeType: 'application/json',
-                        generationConfig: {
-                            // REMOVED thinkingConfig: It often causes 400 Bad Request on Flash models
-                            temperature: 0.2 // Lower temperature for more consistent extraction
-                        }
+                        responseSchema: UPDATE_SCHEMA,
+                        generationConfig: { 
+                            temperature: 0.1, // Very low for consistency
+                            topP: 0.8,
+                            topK: 20
+                        },
+                        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
                     },
-                    contents: [{ role: 'user', parts: [{ text: CONTEXT_BLOCK + "\n" + ASSISTANT_PROMPT }] }]
+                    contents: [{ role: 'user', parts: [{ text: USER_PAYLOAD }] }]
                 });
 
-                // --- CRITICAL FIX: Extract text manually ---
-                let text = "";
-                if (response.candidates && response.candidates[0].content.parts[0].text) {
-                     text = response.candidates[0].content.parts[0].text;
+                // Robust JSON extraction
+                let result = null;
+                if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const rawText = response.candidates[0].content.parts[0].text;
+                    
+                    // Try direct parse first
+                    try {
+                        result = JSON.parse(rawText);
+                    } catch {
+                        // Fallback: extract JSON from markdown or mixed content
+                        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            result = JSON.parse(jsonMatch[0]);
+                        }
+                    }
                 }
-                
-                // [NEW] Robust JSON Extraction
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    text = jsonMatch[0];
-                }
-                // -----------------------------------------
 
-                console.log("Gemini 3 Success"); 
-                ws.send(JSON.stringify({ type: 'templateUpdate', data: JSON.parse(text) }));
+                if (!result || !result.updates) {
+                    console.log("⚠ No valid updates returned");
+                    processedTranscriptLength = slidingWindowTranscript.length;
+                    return;
+                }
+
+                // Apply Delta Updates with Enhanced Deduplication
+                const updates = result.updates.filter(u => u.action !== "SKIP");
+                
+                if (updates.length === 0) {
+                    console.log("✓ No changes needed (all updates were SKIP)");
+                    processedTranscriptLength = slidingWindowTranscript.length;
+                    return;
+                }
+
+                console.log(`📝 Processing ${updates.length} updates:`);
+                let changesMade = false;
+                
+                updates.forEach((update, idx) => {
+                    const field = currentClientState.fields.find(f => f.id === update.fieldId);
+                    
+                    if (!field) {
+                        console.log(`  ${idx + 1}. ⚠ Field "${update.fieldId}" not found - skipping`);
+                        return;
+                    }
+
+                    const oldValue = field.currentValue || "";
+                    let newValue = oldValue;
+
+                    if (update.action === "APPEND") {
+                        // Enhanced deduplication: Check for semantic duplicates
+                        const cleanValue = update.value.trim();
+                        const cleanExisting = oldValue.toLowerCase().trim();
+                        const cleanNew = cleanValue.toLowerCase().trim();
+                        
+                        // Simple duplicate check: if exact phrase exists, skip
+                        if (cleanExisting.includes(cleanNew.replace(/^\*\s*/, ''))) {
+                            console.log(`  ${idx + 1}. ⏭ Duplicate detected in "${field.name}" - skipping`);
+                            return;
+                        }
+
+                        // Append with proper formatting
+                        newValue = oldValue 
+                            ? oldValue + "\n" + cleanValue 
+                            : cleanValue;
+                        
+                        console.log(`  ${idx + 1}. ➕ APPEND to "${field.name}": ${cleanValue.substring(0, 50)}...`);
+                        
+                    } else if (update.action === "REPLACE") {
+                        // Only replace if actually different
+                        if (oldValue === update.value.trim()) {
+                            console.log(`  ${idx + 1}. ⏭ No change needed in "${field.name}"`);
+                            return;
+                        }
+                        
+                        newValue = update.value.trim();
+                        console.log(`  ${idx + 1}. 🔄 REPLACE "${field.name}": ${oldValue.substring(0, 30)}... → ${newValue.substring(0, 30)}...`);
+                    }
+
+                    if (newValue !== oldValue) {
+                        field.currentValue = newValue;
+                        changesMade = true;
+                    }
+                });
+
+                // Sync to client if changes were made
+                if (changesMade) {
+                    const flatUpdate = currentClientState.fields.reduce((acc, f) => {
+                        acc[f.id] = f.currentValue;
+                        return acc;
+                    }, {});
+                    
+                    ws.send(JSON.stringify({ type: 'templateUpdate', data: flatUpdate }));
+                    console.log("✓ Updates sent to client");
+                } else {
+                    console.log("✓ No actual changes after deduplication");
+                }
+
+                // Mark this content as processed
+                processedTranscriptLength = slidingWindowTranscript.length;
 
             } catch (err) {
-                console.error("Gemini 3 Error:", err.message);
-                // [NEW] Send error to client so you can see it in the UI
+                console.error("❌ Gemini Error:", err.message);
+                if (err.stack) console.error(err.stack);
                 ws.send(JSON.stringify({ type: 'error', message: err.message }));
             } finally {
                 isProcessing = false;
@@ -120,8 +274,13 @@ wss.on('connection', (ws) => {
 
     const setupDeepgram = () => {
         dgConnection = deepgram.listen.live({
-            model: "nova-2", language: "en-US", smart_format: true, diarize: true,
-            encoding: "linear16", sample_rate: 16000, interim_results: false
+            model: "nova-2", 
+            language: "en-US", 
+            smart_format: true, 
+            diarize: true,
+            encoding: "linear16", 
+            sample_rate: 16000, 
+            interim_results: false
         });
 
         dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -131,58 +290,91 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify({ type: 'transcript', text: labeledText, isFinal: true }));
                 slidingWindowTranscript += " " + labeledText;
                 
-                // [NEW] Safety cap 
-                if(slidingWindowTranscript.length > 50000) slidingWindowTranscript = slidingWindowTranscript.slice(-40000);
+                // Safety cap with warning
+                if (slidingWindowTranscript.length > 50000) {
+                    console.log("⚠ Transcript exceeding 50k chars, trimming oldest content");
+                    slidingWindowTranscript = slidingWindowTranscript.slice(-40000);
+                    // Adjust processed pointer to match
+                    if (processedTranscriptLength > 40000) {
+                        processedTranscriptLength = 40000;
+                    }
+                }
             }
+        });
+
+        dgConnection.on('error', (err) => {
+            console.error("❌ Deepgram Error:", err);
         });
     };
 
-    // [FIX] Updated signature to accept isBinary flag
     ws.on('message', (message, isBinary) => {
-        // [NEW] Robust Binary Check: Works even if 'ws' version doesn't pass isBinary
-        const isMsgBinary = isBinary || (Buffer.isBuffer(message) && (message.length > 0 && message[0] !== 123)); // 123 is '{'
+        // Robust binary detection
+        const isMsgBinary = isBinary || (Buffer.isBuffer(message) && (message.length > 0 && message[0] !== 123)); 
         
-        // Handle JSON Context Updates
         if (!isMsgBinary) {
             try {
                 const msgStr = message.toString();
                 
-                // 1. Template Update (Legacy/Startup)
+                // Legacy template initialization
                 if (msgStr.startsWith('updateTemplate:')) {
                     activeTemplate = JSON.parse(msgStr.replace('updateTemplate:', ''));
-                    // Initialize state if empty
-                    if(currentClientState.fields.length === 0) {
-                         currentClientState.fields = activeTemplate.map(f => ({...f, currentValue: ''}));
+                    if (currentClientState.fields.length === 0) {
+                        currentClientState.fields = activeTemplate.map(f => ({
+                            ...f, 
+                            currentValue: ''
+                        }));
                     }
-                    console.log("SUCCESS: Template Updated.");
+                    console.log(`✓ Template initialized: ${activeTemplate.length} fields`);
                     return;
                 }
 
-                // 2. Context Update (Real-Time State Sync)
+                // Real-time context sync (CRITICAL for context awareness)
                 const jsonMsg = JSON.parse(msgStr);
                 if (jsonMsg.type === 'contextUpdate') {
                     currentClientState.fields = jsonMsg.fields;
                     currentClientState.userNotes = jsonMsg.userNotes;
 
-                    // FIX: Also sync activeTemplate so the heartbeat loop knows we have a valid template
-                    if (activeTemplate.length === 0 && jsonMsg.fields.length > 0) {
+                    // Always sync activeTemplate when we get valid field data
+                    if (jsonMsg.fields && jsonMsg.fields.length > 0) {
+                        
+                        // [NEW] Smart Reset: Check if fields changed
+                        // This allows retro-active analysis if user adds a field mid-stream
+                        const oldIds = activeTemplate.map(f => f.id).sort().join(',');
+                        const newIds = jsonMsg.fields.map(f => f.id).sort().join(',');
+                        
+                        if (oldIds !== newIds) {
+                            console.log("🔄 Field structure changed! Resetting cursor to analyze full transcript...");
+                            processedTranscriptLength = 0; // The Reset
+                        }
+
                         activeTemplate = jsonMsg.fields;
+                        console.log(`✓ Context synced: ${activeTemplate.length} fields | Notes: ${currentClientState.userNotes ? 'Yes' : 'No'}`);
                     }
                     return;
                 }
-            } catch(e) { /* ignore non-json text */ }
+            } catch(e) { 
+                // Silently ignore non-JSON messages
+            }
             return;
         }
 
-        // Handle Audio
+        // Handle audio stream
         if (isMsgBinary) {
             const sessionAge = (Date.now() - connectionStartTime) / 60000;
+            
+            // Refresh Deepgram connection every 55 minutes (prevents timeout)
             if (sessionAge > 55 || !dgConnection) {
-                if(dgConnection) dgConnection.finish();
+                if (dgConnection) {
+                    console.log("🔄 Refreshing Deepgram connection...");
+                    dgConnection.finish();
+                }
                 setupDeepgram();
                 connectionStartTime = Date.now();
+                
+                // Start heartbeat on first audio
                 if (!heartbeat) startHeartbeat();
             }
+            
             if (dgConnection && dgConnection.getReadyState() === 1) {
                 dgConnection.send(message);
             }
@@ -192,8 +384,13 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
         clearInterval(heartbeat);
         if (dgConnection) dgConnection.finish();
+        console.log("✓ Client disconnected");
+    });
+
+    ws.on('error', (err) => {
+        console.error("❌ WebSocket Error:", err.message);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Gemini 3 Server (GenAI) active on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Gemini Delta Server v2 active on port ${PORT}`));
