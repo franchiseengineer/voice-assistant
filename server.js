@@ -27,6 +27,7 @@ wss.on('connection', (ws) => {
     let slidingWindowTranscript = ""; 
     let heartbeat = null;
     let connectionStartTime = Date.now();
+    let isProcessing = false; // [NEW] Prevent overlapping requests
 
     const startHeartbeat = () => {
         if (heartbeat) return;
@@ -34,18 +35,19 @@ wss.on('connection', (ws) => {
         
         heartbeat = setInterval(async () => {
             // FIX: If activeTemplate is empty, try to populate it from the client state
-            // This ensures the loop doesn't abort if the client sent 'contextUpdate' instead of 'updateTemplate'
             if (activeTemplate.length === 0 && currentClientState.fields.length > 0) {
                  activeTemplate = currentClientState.fields;
             }
 
+            // Guards
             if (slidingWindowTranscript.trim().length < 10 || activeTemplate.length === 0) return;
+            if (isProcessing) return; // [NEW] Don't start if already busy
             
+            isProcessing = true;
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
             try {
                 // [NEW] Build Context Block. 
-                // This forces Gemini to see existing data so it merges instead of overwrites.
                 const CONTEXT_BLOCK = `
                 ### CURRENT KNOWLEDGE STATE (Context)
                 Use this to merge new facts. If the new transcript is silent on a topic, PRESERVE these values:
@@ -54,7 +56,6 @@ wss.on('connection', (ws) => {
                 
                 ### INSTRUCTIONS`;
 
-                // --- YOUR EXACT PROMPT (UNTOUCHED) ---
                 const ASSISTANT_PROMPT = `
                 You are a professional assistant creating a clean, scannable knowledge base. 
                 Your goal is to produce a clean, factual report based on the provided transcript.
@@ -75,9 +76,8 @@ wss.on('connection', (ws) => {
 
                 OUTPUT: Return ONLY a flat JSON object where keys match these IDs: ${activeTemplate.map(f => f.id).join(', ')}.
                 `;
-                // -----------------------------------------
 
-                // [UPDATED] Prepend Context, but keep YOUR Model & Config
+                // [UPDATED] Prepend Context
                 const response = await aiClient.models.generateContent({
                     model: 'gemini-3.0-flash-exp', // Updated to 2026 standard
                     config: {
@@ -97,6 +97,14 @@ wss.on('connection', (ws) => {
                 if (response.candidates && response.candidates[0].content.parts[0].text) {
                      text = response.candidates[0].content.parts[0].text;
                 }
+                
+                // [NEW] Robust JSON Extraction (Fixes the "Blip")
+                // Models with "Thinking" often output text/markdown before the JSON.
+                // We find the first '{' and the last '}' to extract just the JSON.
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    text = jsonMatch[0];
+                }
                 // -----------------------------------------
 
                 console.log("Gemini 3 Success"); 
@@ -105,6 +113,7 @@ wss.on('connection', (ws) => {
             } catch (err) {
                 console.error("Gemini 3 Error:", err.message);
             } finally {
+                isProcessing = false;
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
         }, 10000); 
