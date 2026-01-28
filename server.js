@@ -93,6 +93,15 @@ wss.on('connection', (ws) => {
             isProcessing = true;
             ws.send(JSON.stringify({ type: 'status', active: true }));
 
+            // Safety timeout: Auto-unlock after 15 seconds if processing gets stuck
+            const processingTimeout = setTimeout(() => {
+                if (isProcessing) {
+                    console.error("⚠️ Processing timeout - forcing unlock");
+                    isProcessing = false;
+                    ws.send(JSON.stringify({ type: 'status', active: false }));
+                }
+            }, 15000);
+
             try {
                 // [RESTORED] Your Original Prompt Logic + Delta Instructions
                 const SYSTEM_INSTRUCTION = `
@@ -266,6 +275,7 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                 if (err.stack) console.error(err.stack);
                 ws.send(JSON.stringify({ type: 'error', message: err.message }));
             } finally {
+                clearTimeout(processingTimeout);
                 isProcessing = false;
                 ws.send(JSON.stringify({ type: 'status', active: false }));
             }
