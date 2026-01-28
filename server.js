@@ -154,7 +154,7 @@ Generate the JSON update list. Be conservative - when in doubt, SKIP rather than
                         responseMimeType: 'application/json',
                         responseSchema: UPDATE_SCHEMA,
                         generationConfig: { 
-                            temperature: 0.1, // Very low for consistency
+                            temperature: 0.2, // Very low for consistency
                             topP: 0.8,
                             topK: 20
                         },
