@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
-const { GoogleGenAI, SchemaType } = require("@google/genai"); 
+const { GoogleGenAI } = require("@google/genai"); 
 
 if (!process.env.DEEPGRAM_API_KEY || !process.env.GEMINI_API_KEY) {
     console.error("FATAL ERROR: API keys are missing. Check your .env file.");
@@ -20,30 +20,30 @@ const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // --- ENHANCED SCHEMA DEFINITION ---
-// Forces the AI to output structured, deduplication-friendly updates
+// Using inline type definitions instead of SchemaType
 const UPDATE_SCHEMA = {
-  type: SchemaType.OBJECT,
+  type: "object",
   properties: {
     updates: {
-      type: SchemaType.ARRAY,
+      type: "array",
       items: {
-        type: SchemaType.OBJECT,
+        type: "object",
         properties: {
           fieldId: { 
-            type: SchemaType.STRING, 
+            type: "string", 
             description: "The exact ID of the field to update (must match template IDs)." 
           },
           action: { 
-            type: SchemaType.STRING, 
+            type: "string", 
             enum: ["APPEND", "REPLACE", "SKIP"], 
             description: "APPEND: Add new bullet point to existing notes. REPLACE: Overwrite entire field (use only for corrections or single-value fields like Name/Date). SKIP: No update needed for this field." 
           },
           value: { 
-            type: SchemaType.STRING, 
+            type: "string", 
             description: "The new content. For APPEND, start with '* '. For REPLACE, provide complete new value. For SKIP, leave empty." 
           },
           reason: {
-            type: SchemaType.STRING,
+            type: "string",
             description: "Brief explanation of why this update is needed (helps with debugging)."
           }
         },
