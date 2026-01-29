@@ -5,356 +5,869 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bingo Notes</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            margin: 0;
+            padding: 0;
+        }
+        
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            margin: 0; 
-            padding: 0; 
             background: #f5f5f5;
             touch-action: manipulation;
+            overflow-x: hidden;
         }
 
-        /* Sticky Header */
-        #app-header {
+        /* ========== BENTO GRID LAYOUT ========== */
+        
+        .bento-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== STICKY HEADER ========== */
+        .bento-header {
             position: sticky;
             top: 0;
-            z-index: 1000;
-            background: #fff;
-            padding: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+            background: white;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
+        /* Top Bar with Logo & Settings */
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
-        h1 { 
-            margin: 0; 
-            font-size: 1.3em; 
-            color: #333;
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        #settings-btn {
-            background: none;
+        .logo-icon {
+            font-size: 1.8em;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3em;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .logo-text .tagline {
+            font-size: 0.75em;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        .settings-icon {
+            background: rgba(255,255,255,0.2);
             border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             font-size: 1.4em;
             cursor: pointer;
-            padding: 5px;
-        }
-
-        /* Status Bar */
-        #status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
-
-        #status-light {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #bbb;
-            margin-right: 8px;
-            transition: background 0.3s;
-        }
-
-        /* Buttons */
-        .btn-group {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        button {
-            padding: 12px 8px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.85em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            touch-action: manipulation;
-        }
-
-        button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        #start-btn { background: #007bff; color: white; }
-        #stop-btn { background: #6c757d; color: white; }
-        #report-btn { background: #28a745; color: white; }
-        #clear-btn { background: #ffc107; color: #212529; }
-        #add-field-btn { background: #17a2b8; color: white; }
-
-        /* Content Areas */
-        .content-section {
-            background: white;
-            margin: 15px;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-        }
-
-        .section-title {
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #333;
-        }
-
-        /* Fields */
-        .field-row {
-            display: grid;
-            grid-template-columns: 1fr 40px;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            transition: border 0.3s;
-        }
-        
-        .field-content { display: flex; flex-direction: column; }
-
-        .field-row.updated { 
-            border-color: #28a745;
-            animation: pulse 0.5s;
-        }
-
-        @keyframes pulse {
-            0%, 100% { background: #f8f9fa; }
-            50% { background: #d4edda; }
-        }
-
-        .field-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .field-name { font-weight: 600; color: #495057; }
-        .field-hint { font-size: 0.85em; color: #6c757d; font-style: italic; margin-bottom: 8px; }
-
-        .field-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 1em;
-            resize: vertical;
-            min-height: 60px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .field-input:focus { outline: none; border-color: #007bff; }
-
-        .field-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            justify-content: flex-start;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            padding: 8px;
-            background: #e9ecef;
-            color: #495057;
-            border-radius: 6px;
-            font-size: 1.1em;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
 
-        .icon-btn.locked { background: #fff3cd; color: #856404; }
-        .icon-btn.delete { background: #f8d7da; color: #721c24; }
-        .field-input.locked { background-color: #fff3cd; border-color: #ffc107; }
-
-        /* Transcript in Header */
-        #transcript-box {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 8px 12px;
-            height: 2.8em;
-            overflow: hidden; 
-            font-size: 0.8em;
-            line-height: 1.4;
-            color: #495057;
-            margin-bottom: 15px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            line-clamp: 2; 
-            -webkit-box-orient: vertical;
-            text-overflow: ellipsis;
+        .settings-icon:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.3);
         }
 
-        /* Add Field Form */
-        .add-field-form { display: grid; gap: 10px; margin-bottom: 15px; }
-        .add-field-form input { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1em; }
-
-        /* Template Controls */
-        .template-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 15px; }
-        .template-controls select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95em; }
-        .small-btn { padding: 10px 15px; font-size: 0.9em; }
-        .template-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        /* Repository Styles */
-        #repo-controls {
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-            margin-bottom: 15px;
+        /* Status Banner */
+        .status-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .note-card {
-            background: #fff;
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            margin-bottom: 12px;
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e0;
+            transition: background 0.3s;
+        }
+
+        .status-dot.ready { background: #48bb78; }
+        .status-dot.listening { background: #4299e1; animation: pulse 2s infinite; }
+        .status-dot.analyzing { background: #fbbf24; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .status-text {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .audio-source {
+            font-size: 0.85em;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Control Buttons */
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-start { background: #48bb78; color: white; }
+        .btn-stop { background: #e53e3e; color: white; }
+        .btn-save { background: #667eea; color: white; }
+        .btn-clear { background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; }
+
+        /* Live Transcript */
+        .live-transcript {
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .transcript-label {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .transcript-text {
+            font-size: 0.85em;
+            color: #2d3748;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        /* Quick Actions Bar */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .quick-btn {
+            padding: 8px 16px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
         }
+
+        .quick-btn:active {
+            transform: scale(0.95);
+            background: #e2e8f0;
+        }
+
+        /* ========== MAIN CONTENT AREA ========== */
+        .bento-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        /* ========== BENTO GRID ========== */
+        .field-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr;
+        }
+
+        /* Landscape mode: 2 columns */
+        @media (min-width: 768px) and (orientation: landscape) {
+            .field-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Large screens: 3 columns */
+        @media (min-width: 1200px) {
+            .field-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Field Card */
+        .field-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .field-card:active {
+            transform: scale(0.98);
+        }
+
+        .field-card.updated {
+            border-color: #48bb78;
+            animation: cardPulse 0.6s ease-out;
+        }
+
+        @keyframes cardPulse {
+            0% { background: white; }
+            50% { background: #f0fff4; }
+            100% { background: white; }
+        }
+
+        .field-card.locked {
+            background: #fffbeb;
+            border-color: #fbbf24;
+        }
+
+        .field-card.collapsed .field-content {
+            display: none;
+        }
+
+        /* Update Badge */
+        .update-badge {
+            position: absolute;
+            top: -8px;
+            right: 16px;
+            background: #48bb78;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .field-card.updated .update-badge {
+            opacity: 1;
+        }
+
+        /* Field Header */
+        .field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .field-info {
+            flex: 1;
+        }
+
+        .field-name {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .field-hint {
+            font-size: 0.8em;
+            color: #a0aec0;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .empty-indicator {
+            font-size: 0.7em;
+            padding: 2px 8px;
+            background: #fed7d7;
+            color: #c53030;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .has-content-indicator {
+            font-size: 0.7em;
+            padding: 2px 8px;
+            background: #c6f6d5;
+            color: #22543d;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .field-actions {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f7fafc;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+
+        .icon-btn.collapse {
+            background: #e2e8f0;
+        }
+
+        .icon-btn.lock {
+            background: #fef5e7;
+        }
+
+        .icon-btn.delete {
+            background: #fed7d7;
+        }
+
+        /* Field Content */
+        .field-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .field-value {
+            font-size: 0.9em;
+            color: #4a5568;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .field-value:empty::before {
+            content: 'Waiting for data...';
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        /* User Notes Section */
+        .user-notes-card {
+            background: linear-gradient(135deg, #fff5eb 0%, #ffe4cc 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .user-notes-label {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-notes-input {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95em;
+            resize: vertical;
+            background: white;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2em;
+            font-weight: 300;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 50;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f7fafc;
+            border-radius: 8px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #4a5568;
+        }
+
+        .add-field-form {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .add-field-input {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .add-field-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-add-field {
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Fullscreen Overlay */
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 300;
+            flex-direction: column;
+        }
+
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+
+        .fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .fullscreen-title {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .fullscreen-close {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            font-size: 2em;
+            cursor: pointer;
+        }
+
+        .fullscreen-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .fullscreen-hint {
+            font-size: 0.9em;
+            color: #718096;
+            font-style: italic;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .fullscreen-value {
+            font-size: 1em;
+            color: #2d3748;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        /* Repository Section */
+        .repository-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .repo-header {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+
+        .repo-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .repo-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .view-history-btn {
+            grid-column: 1 / -1;
+            background: #2d3748;
+            color: white;
+            padding: 14px;
+            font-size: 1em;
+        }
+
+        .note-card {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+        }
+
         .note-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
-        }
-        .note-content { font-size: 0.9em; color: #555; margin-bottom: 12px; }
-        .note-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .note-btn { font-size: 0.8em; padding: 6px; border-radius: 4px; border: none; color: white; font-weight: bold; }
-
-        /* Fixed User Notes Area (Full Width) */
-        .user-notes-container {
-            margin-top: 25px;
-            width: 100%;
-            border-top: 2px dashed #ccc;
-            padding-top: 20px;
-        }
-        .user-notes-label {
-            color: #e67e22; 
-            font-weight: bold; 
-            display: block; 
-            margin-bottom: 8px;
-            font-size: 1.1em;
-        }
-        .user-notes-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e67e22;
-            border-radius: 6px;
-            min-height: 100px;
-            font-family: inherit;
-            font-size: 1em;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        /* High Contrast History Button */
-        #viewHistoryBtn {
-            background-color: #000; 
-            color: #fff; 
-            width: 100%; 
-            padding: 15px;
-            font-size: 1em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            border-radius: 8px;
+        .note-title {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .note-date {
+            font-size: 0.85em;
+            color: #718096;
+        }
+
+        .note-preview {
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .note-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .note-btn {
+            padding: 8px;
             border: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
         }
 
+        .history-container {
+            display: none;
+        }
+
+        .history-container.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <div id="app-header">
-        <div class="header-top">
-            <h1>🎙️ Bingo Notes</h1>
-            <button id="settings-btn" title="Configure Server URL">⚙️</button>
-        </div>
-        
-        <div id="status-bar">
-            <div>
-                <span id="status-light"></span>
-                <span id="status-text">Ready</span>
+    <div class="bento-container">
+        <!-- Header -->
+        <div class="bento-header">
+            <!-- Top Bar -->
+            <div class="header-top">
+                <div class="logo-section">
+                    <div class="logo-icon">🎙️</div>
+                    <div class="logo-text">
+                        <h1>Bingo Notes</h1>
+                        <div class="tagline">Intelligent Real-Time Notes</div>
+                    </div>
+                </div>
+                <button class="settings-icon" id="settingsBtn">⚙️</button>
             </div>
-            <div id="source-display" style="font-weight: 600; color: #007bff;">Microphone</div>
-        </div>
 
-        <div class="btn-group">
-            <button id="start-btn">▶️ Start</button>
-            <button id="stop-btn" disabled>⏹️ Stop</button>
-            <button id="report-btn">💾 Report</button>
-            <button id="clear-btn">🗑️ Clear</button>
-        </div>
-
-        <div id="transcript-box">Waiting for audio...</div>
-    </div>
-
-    <div class="content-section">
-        <div class="section-title">📋 Templates</div>
-        <div class="template-controls">
-            <select id="template-dropdown">
-                <option value="">-- Select Template --</option>
-            </select>
-            <button class="small-btn" id="load-template-btn" style="background: #007bff; color: white;">Load</button>
-            <button class="small-btn" id="save-template-btn" style="background: #28a745; color: white;">Save</button>
-        </div>
-        <div class="template-actions">
-            <button class="small-btn" id="export-template-btn" style="background: #6c757d; color: white;">Export</button>
-            <button class="small-btn" id="import-template-btn" style="background: #6c757d; color: white;">Import</button>
-        </div>
-        <input type="file" id="import-file" accept=".json" style="display: none;">
-    </div>
-
-    <div class="content-section">
-        <div class="section-title">📝 Data Fields</div>
-        <div class="add-field-form">
-            <input type="text" id="field-name-input" placeholder="Field Name (e.g., Name, Date)">
-            <input type="text" id="field-hint-input" placeholder="Extraction Hint (e.g., Extract full name)">
-            <button id="add-field-btn">+ Add Field</button>
-        </div>
-        <div id="fields-container"></div>
-        
-        <div class="user-notes-container">
-            <label class="user-notes-label">User Notes</label>
-            <textarea id="manualNotes" class="user-notes-input" placeholder="Bingo Notes will not change this field"></textarea>
-        </div>
-    </div>
-
-    <div class="content-section" style="border-top: 4px solid #333;">
-        <h3>📚 Note Repository</h3>
-        
-        <div id="repo-controls">
-            <button id="shareAllBtn" style="background: #17a2b8; color: white;">📤 Share All</button>
-            <button id="clearRepoBtn" style="background: #dc3545; color: white;">🗑️ Clear All</button>
-        </div>
-
-        <button id="viewHistoryBtn">Show Saved Notes</button>
-        
-        <div id="historyContainer" style="display: none;">
+            <!-- Status Banner -->
+            <div class="status-banner">
+                <div class="status-left">
+                    <div class="status-dot ready" id="statusDot"></div>
+                    <div class="status-text" id="statusText">Ready</div>
+                </div>
+                <div class="audio-source" id="audioSource">
+                    🎤 Microphone
+                </div>
             </div>
+
+            <!-- Control Buttons -->
+            <div class="control-buttons">
+                <button class="btn btn-start" id="startBtn">▶️ Start</button>
+                <button class="btn btn-stop" id="stopBtn" disabled>⏹️ Stop</button>
+                <button class="btn btn-save" id="saveBtn">💾 Save</button>
+                <button class="btn btn-clear" id="clearBtn">🗑️ Clear</button>
+            </div>
+
+            <!-- Live Transcript -->
+            <div class="live-transcript">
+                <div class="transcript-label">Live Transcript</div>
+                <div class="transcript-text" id="transcriptText">Waiting for audio...</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="expandAll()">📂 Expand All</button>
+                <button class="quick-btn" onclick="collapseAll()">📁 Collapse All</button>
+                <button class="quick-btn" onclick="openTemplateManager()">📋 Templates</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="bento-content">
+            <!-- Field Grid -->
+            <div class="field-grid" id="fieldGrid">
+                <!-- Fields will be dynamically added here -->
+            </div>
+
+            <!-- User Notes -->
+            <div class="user-notes-card">
+                <div class="user-notes-label">
+                    📝 User Notes
+                    <span style="font-size: 0.7em; font-weight: 400; color: #92400e;">(Protected - AI won't modify)</span>
+                </div>
+                <textarea id="manualNotes" class="user-notes-input" placeholder="Add your own notes here. AI will not change this field."></textarea>
+            </div>
+
+            <!-- Repository Section -->
+            <div class="repository-section">
+                <div class="repo-header">📚 Saved Notes</div>
+                <div class="repo-controls">
+                    <button class="repo-btn" style="background: #4299e1; color: white;" id="shareAllBtn">📤 Share All</button>
+                    <button class="repo-btn" style="background: #e53e3e; color: white;" id="clearRepoBtn">🗑️ Clear All</button>
+                </div>
+                <button class="view-history-btn" id="viewHistoryBtn">Show Saved Notes</button>
+                <div class="history-container" id="historyContainer"></div>
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="fab" onclick="openAddFieldModal()">+</button>
     </div>
-    
+
+    <!-- Add Field Modal -->
+    <div class="modal-overlay" id="addFieldModal" onclick="closeAddFieldModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">➕ Add New Field</div>
+                <button class="modal-close" onclick="closeAddFieldModal()">×</button>
+            </div>
+            <div class="add-field-form">
+                <input type="text" class="add-field-input" id="fieldNameInput" placeholder="Field Name (e.g., Client Name)">
+                <input type="text" class="add-field-input" id="fieldHintInput" placeholder="Extraction Hint (e.g., Extract full name)">
+                <button class="btn-add-field" onclick="addNewField()">+ Add Field</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Manager Modal -->
+    <div class="modal-overlay" id="templateModal" onclick="closeTemplateManager(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📋 Template Manager</div>
+                <button class="modal-close" onclick="closeTemplateManager()">×</button>
+            </div>
+            <div class="add-field-form">
+                <select id="templateDropdown" class="add-field-input">
+                    <option value="">-- Select Template --</option>
+                </select>
+                <button class="btn-add-field" onclick="loadTemplate()" style="background: #4299e1;">Load Template</button>
+                <button class="btn-add-field" onclick="saveTemplate()" style="background: #48bb78;">Save Current as Template</button>
+                <button class="btn-add-field" onclick="exportTemplate()" style="background: #718096;">Export Template</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importTemplate()">
+                <button class="btn-add-field" onclick="document.getElementById('importFile').click()" style="background: #718096;">Import Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Overlay -->
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+        <div class="fullscreen-header">
+            <div class="fullscreen-title" id="fullscreenTitle">Field Name</div>
+            <button class="fullscreen-close" onclick="closeFullscreen()">×</button>
+        </div>
+        <div class="fullscreen-content">
+            <div class="fullscreen-hint" id="fullscreenHint">Extraction hint appears here</div>
+            <div class="fullscreen-value" id="fullscreenValue">Content appears here</div>
+        </div>
+    </div>
+
     <script>
-        // --- SETTINGS & HARDCODED URL ---
+        // ========== GLOBAL VARIABLES ==========
         let currentWsUrl = localStorage.getItem('voice_app_ws_url') || 'wss://voice-assistant-4plp.onrender.com';
         
-        const settingsBtn = document.getElementById('settings-btn');
+        let socket = null;
+        let audioContext = null;
+        let mediaStream = null;
+        let processor = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT = 3;
+
+        let fields = [];
+        let fullTranscript = '';
+
+        // ========== UI ELEMENTS ==========
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const transcriptText = document.getElementById('transcriptText');
+        const fieldGrid = document.getElementById('fieldGrid');
+        const settingsBtn = document.getElementById('settingsBtn');
+
+        // ========== SETTINGS ==========
         settingsBtn.addEventListener('click', () => {
             const newUrl = prompt("Enter Server WebSocket URL:", currentWsUrl);
             if (newUrl && newUrl.trim()) {
@@ -364,33 +877,7 @@
             }
         });
 
-        // --- GLOBAL VARIABLES ---
-        let socket = null;
-        let audioContext = null;
-        let mediaStream = null;
-        let processor = null;
-        let reconnectAttempts = 0;
-        const MAX_RECONNECT = 3;
-
-        // UI Elements
-        const startBtn = document.getElementById('start-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const reportBtn = document.getElementById('report-btn'); 
-        const clearBtn = document.getElementById('clear-btn');
-        const statusLight = document.getElementById('status-light');
-        const statusText = document.getElementById('status-text');
-        const transcriptBox = document.getElementById('transcript-box');
-        const fieldsContainer = document.getElementById('fields-container');
-        const addFieldBtn = document.getElementById('add-field-btn');
-        const fieldNameInput = document.getElementById('field-name-input');
-        const fieldHintInput = document.getElementById('field-hint-input');
-        const templateDropdown = document.getElementById('template-dropdown');
-
-        // State
-        let fields = [];
-        let fullTranscript = '';
-
-        // --- FIELD & TEMPLATE LOGIC ---
+        // ========== FIELD MANAGEMENT ==========
         function initDefaultFields() {
             if (fields.length === 0) {
                 addField('Name', 'Extract the person\'s full name');
@@ -399,27 +886,10 @@
             }
         }
 
-        // --- NEW: INJECT CUSTOM TEMPLATES ---
-        function initTemplates() {
-            const stored = JSON.parse(localStorage.getItem('voice_templates') || '{}');
-            
-            const franchiseTemplate = [{"name":"Franchise Name","hint":"Extract full name."},{"name":"Industry","hint":"The company's industry and all details about the general industry"},{"name":"Investment Level","hint":"High and Low All-in Investment Range, Franchise Fees, Other setup costs"},{"name":"Ownership Type","hint":"Owner operated vs Semi Absentee vs Executive"},{"name":"Products and Services","hint":"What the business provides the customer"},{"name":"Customer","hint":"The target market, demographic, communities, etc."},{"name":"Financial Performance","hint":"Gross Revenues, Average Unit Volumes, Margins, Item 19 information, other financial performance measures"},{"name":"Facility Type and Real Estate","hint":"Mobile, Home Office, Retail, Office Location, Size and Class of Real Estate if required"},{"name":"History of the Franchise","hint":"Founder's Story, important events in the company timeline"},{"name":"Role of the Owner","hint":"Regular required tasks of a franchisee in the system. Required hours worked. Where they can personally operate"},{"name":"Pre-Opening Training and Support","hint":"What the Franchisor provides to help the Franchisee get there business open and operating"},{"name":"Ongoing Training and Support","hint":"What the Franchisor provides in support for their actively operating Franchisees."},{"name":"Growth and Exit Potential","hint":"The potential size of the business, the resale value when ready to exit. Do resales sell quickly?"},{"name":"Lifestyle and Values ","hint":"Certain company values and endeavors the Franchise upholds and gives back to the community."},{"name":"Territory Size and Description","hint":"How territories are determined"},{"name":"Brand Equity","hint":"Public perception of the brand, Overall size of the franchise, Number of owners and locations, Reputation within the industry, Brand awareness among consumers"},{"name":"Customer Acquisition","hint":"Marketing and Sales strategies and support"},{"name":"Operational Complexity","hint":"Number and type of employees, Challenges faced in the industry, simple or complex operational model"},{"name":"Ideal Candidate","hint":"What makes someone a perfect match for this franchise"},{"name":"Veterans and First Responders","hint":"Initiatives and Incentives to attract vets and first responders"}];
-            
-            const businessOwnerTemplate = [{"name":"Company Name","hint":"Name of the owner's business"},{"name":"Owner's Name","hint":"Extract full name"},{"name":"Phone Number","hint":"Extract details."},{"name":"Email Address","hint":"Extract details."},{"name":"Business Address","hint":"Extract Full Address"},{"name":"Company Website","hint":"Extract details."},{"name":"What year did you start your business?","hint":"Year business was started and / or acquired by the current owner"},{"name":"How many locations?","hint":"Number and locations of currently open sites"},{"name":"Business Description","hint":"The industry, product or service, customers served, other descriptions of the business"},{"name":"Who are your main competitors?","hint":"Names of primary competitors"},{"name":"What makes your business different?","hint":"Everything unique developed by this business, how they outperform competitors, why an investor or customer would choose them over a competitor"},{"name":"Annual Revenue","hint":"Estimate of annual gross revenues"},{"name":"Business Estimated Startup Costs","hint":"Ballpark estimate of what it would cost to open a new location plus a franchise fee"},{"name":"Have you looked at franchising before?","hint":"Owner's experience to date investigating franchising for this business if any"},{"name":"Any interest from potential franchisees?","hint":"Details of any friends, family, or others who have expressed interest in becoming a franchisee"}];
-
-            // Merge defaults into storage
-            const defaults = {
-                "Franchise Model": franchiseTemplate,
-                "Business Owner": businessOwnerTemplate
-            };
-            
-            Object.assign(stored, defaults);
-            localStorage.setItem('voice_templates', JSON.stringify(stored));
-        }
-
         function addField(name, hint) {
             const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             if (fields.find(f => f.id === id)) return;
+            
             fields.push({ id, name, hint, value: '', locked: false });
             renderField(id, name, hint);
             syncFieldsToServer();
@@ -428,59 +898,87 @@
         function renderField(id, name, hint) {
             const field = fields.find(f => f.id === id);
             const isLocked = field?.locked || false;
+            const hasContent = field?.value && field.value.trim().length > 0;
             
-            const fieldDiv = document.createElement('div');
-            fieldDiv.className = 'field-row';
-            fieldDiv.id = id;
-            fieldDiv.innerHTML = `
-                <div class="field-content">
-                    <div class="field-label"><span class="field-name">${name}</span></div>
-                    <div class="field-hint">${hint}</div>
-                    <textarea class="field-input ${isLocked ? 'locked' : ''}" data-field-id="${id}" placeholder="Auto-populated..." oninput="autoGrowTextarea(this); updateFieldData('${id}', this.value)">${field?.value || ''}</textarea>
+            const card = document.createElement('div');
+            card.className = 'field-card';
+            card.id = id;
+            card.innerHTML = `
+                <div class="update-badge">UPDATED</div>
+                <div class="field-header" onclick="toggleCollapse(this)">
+                    <div class="field-info">
+                        <div class="field-name">
+                            ${name}
+                            <span class="${hasContent ? 'has-content-indicator' : 'empty-indicator'}">${hasContent ? '✓ Has Data' : '⚠ Empty'}</span>
+                        </div>
+                        <div class="field-hint">${hint}</div>
+                    </div>
+                    <div class="field-actions" onclick="event.stopPropagation()">
+                        <button class="icon-btn collapse">▼</button>
+                        <button class="icon-btn" onclick="openFullscreen(this)" title="Fullscreen">⛶</button>
+                        <button class="icon-btn lock" onclick="toggleLock('${id}')">${isLocked ? '🔒' : '🔓'}</button>
+                        <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️</button>
+                    </div>
                 </div>
-                <div class="field-actions">
-                    <button class="icon-btn ${isLocked ? 'locked' : ''}" onclick="toggleLock('${id}')">${isLocked ? '🔒' : '🔓'}</button>
-                    <button class="icon-btn" onclick="editField('${id}')">✏️</button>
-                    <button class="icon-btn delete" onclick="deleteField('${id}')">🗑️</button>
+                <div class="field-content">
+                    <div class="field-value" data-field-id="${id}">${field?.value || ''}</div>
                 </div>
             `;
-            fieldsContainer.appendChild(fieldDiv);
+            
+            fieldGrid.appendChild(card);
         }
 
-        window.updateFieldData = function(id, value) {
-            const field = fields.find(f => f.id === id);
-            if (field) field.value = value;
-        };
+        function updateFieldValue(fieldId, value) {
+            const field = fields.find(f => f.id === fieldId);
+            if (!field || field.locked) return;
 
-        window.autoGrowTextarea = function(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+            const cleanValue = (value === null || value === 'null') ? '' : value.trim();
+            if (!cleanValue) return;
+
+            field.value = cleanValue;
+
+            const card = document.getElementById(fieldId);
+            if (!card) return;
+
+            const valueDiv = card.querySelector('.field-value');
+            if (valueDiv) {
+                valueDiv.textContent = field.value;
+            }
+
+            // Update indicator
+            const indicator = card.querySelector('.empty-indicator, .has-content-indicator');
+            if (indicator) {
+                indicator.className = 'has-content-indicator';
+                indicator.textContent = '✓ Has Data';
+            }
+
+            // Trigger update animation
+            card.classList.add('updated');
+            setTimeout(() => card.classList.remove('updated'), 2000);
+        }
+
+        window.toggleCollapse = function(element) {
+            const card = element.closest('.field-card');
+            const collapseBtn = card.querySelector('.icon-btn.collapse');
+            const isCollapsed = card.classList.toggle('collapsed');
+            collapseBtn.textContent = isCollapsed ? '▶' : '▼';
         };
 
         window.toggleLock = function(id) {
             const field = fields.find(f => f.id === id);
             if (!field) return;
+            
             field.locked = !field.locked;
-            const fieldDiv = document.getElementById(id);
-            const lockBtn = fieldDiv.querySelector('.icon-btn');
-            const textarea = fieldDiv.querySelector('.field-input');
+            const card = document.getElementById(id);
+            const lockBtn = card.querySelector('.icon-btn.lock');
+            
             if (field.locked) {
-                lockBtn.textContent = '🔒'; lockBtn.classList.add('locked'); textarea.classList.add('locked');
+                lockBtn.textContent = '🔒';
+                card.classList.add('locked');
             } else {
-                lockBtn.textContent = '🔓'; lockBtn.classList.remove('locked'); textarea.classList.remove('locked');
+                lockBtn.textContent = '🔓';
+                card.classList.remove('locked');
             }
-        };
-
-        window.editField = function(id) {
-            const field = fields.find(f => f.id === id);
-            if (!field) return;
-            const newName = prompt('Edit field name:', field.name);
-            const newHint = prompt('Edit extraction hint:', field.hint);
-            if (newName) field.name = newName;
-            if (newHint) field.hint = newHint;
-            document.getElementById(id).remove();
-            renderField(id, field.name, field.hint);
-            syncFieldsToServer();
         };
 
         window.deleteField = function(id) {
@@ -490,19 +988,173 @@
             syncFieldsToServer();
         };
 
-        // UPDATED: Sends values + notes to server for Context Awareness
+        window.expandAll = function() {
+            document.querySelectorAll('.field-card.collapsed').forEach(card => {
+                card.classList.remove('collapsed');
+                const collapseBtn = card.querySelector('.icon-btn.collapse');
+                if (collapseBtn) collapseBtn.textContent = '▼';
+            });
+        };
+
+        window.collapseAll = function() {
+            document.querySelectorAll('.field-card:not(.collapsed)').forEach(card => {
+                card.classList.add('collapsed');
+                const collapseBtn = card.querySelector('.icon-btn.collapse');
+                if (collapseBtn) collapseBtn.textContent = '▶';
+            });
+        };
+
+        window.openFullscreen = function(btn) {
+            const card = btn.closest('.field-card');
+            const name = card.querySelector('.field-name').textContent.trim().split('\n')[0];
+            const hint = card.querySelector('.field-hint').textContent;
+            const value = card.querySelector('.field-value').textContent || 'No data yet';
+            
+            document.getElementById('fullscreenTitle').textContent = name;
+            document.getElementById('fullscreenHint').textContent = hint;
+            document.getElementById('fullscreenValue').textContent = value;
+            document.getElementById('fullscreenOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeFullscreen = function() {
+            document.getElementById('fullscreenOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // ========== ADD FIELD MODAL ==========
+        window.openAddFieldModal = function() {
+            document.getElementById('addFieldModal').classList.add('active');
+            document.getElementById('fieldNameInput').focus();
+        };
+
+        window.closeAddFieldModal = function(event) {
+            if (!event || event.target.id === 'addFieldModal') {
+                document.getElementById('addFieldModal').classList.remove('active');
+            }
+        };
+
+        window.addNewField = function() {
+            const name = document.getElementById('fieldNameInput').value.trim();
+            const hint = document.getElementById('fieldHintInput').value.trim();
+            
+            if (!name) {
+                alert('Please enter a field name');
+                return;
+            }
+            
+            addField(name, hint || 'Extract relevant information');
+            
+            document.getElementById('fieldNameInput').value = '';
+            document.getElementById('fieldHintInput').value = '';
+            closeAddFieldModal();
+        };
+
+        // ========== TEMPLATE MANAGER ==========
+        function initTemplates() {
+            const stored = JSON.parse(localStorage.getItem('voice_templates') || '{}');
+            
+            const franchiseTemplate = [{"name":"Franchise Name","hint":"Extract full name."},{"name":"Industry","hint":"The company's industry and all details about the general industry"},{"name":"Investment Level","hint":"High and Low All-in Investment Range, Franchise Fees, Other setup costs"}];
+            const businessOwnerTemplate = [{"name":"Company Name","hint":"Name of the owner's business"},{"name":"Owner's Name","hint":"Extract full name"},{"name":"Business Description","hint":"The industry, product or service, customers served"}];
+
+            const defaults = {
+                "Franchise Model": franchiseTemplate,
+                "Business Owner": businessOwnerTemplate
+            };
+            
+            Object.assign(stored, defaults);
+            localStorage.setItem('voice_templates', JSON.stringify(stored));
+            updateTemplateDropdown();
+        }
+
+        function updateTemplateDropdown() {
+            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
+            const dropdown = document.getElementById('templateDropdown');
+            dropdown.innerHTML = '<option value="">-- Select Template --</option>';
+            Object.keys(t).forEach(n => {
+                const o = document.createElement('option');
+                o.value = n;
+                o.innerText = n;
+                dropdown.appendChild(o);
+            });
+        }
+
+        window.openTemplateManager = function() {
+            updateTemplateDropdown();
+            document.getElementById('templateModal').classList.add('active');
+        };
+
+        window.closeTemplateManager = function(event) {
+            if (!event || event.target.id === 'templateModal') {
+                document.getElementById('templateModal').classList.remove('active');
+            }
+        };
+
+        window.loadTemplate = function() {
+            const name = document.getElementById('templateDropdown').value;
+            if (!name) return;
+            
+            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}')[name];
+            if (t) {
+                fields = [];
+                fieldGrid.innerHTML = '';
+                t.forEach(f => addField(f.name, f.hint));
+                closeTemplateManager();
+            }
+        };
+
+        window.saveTemplate = function() {
+            const name = prompt('Template Name:');
+            if (!name) return;
+            
+            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
+            t[name] = fields.map(f => ({name: f.name, hint: f.hint}));
+            localStorage.setItem('voice_templates', JSON.stringify(t));
+            updateTemplateDropdown();
+            alert('Template saved!');
+        };
+
+        window.exportTemplate = function() {
+            const template = fields.map(f => ({name: f.name, hint: f.hint}));
+            const blob = new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'template.json';
+            a.click();
+        };
+
+        window.importTemplate = function() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const template = JSON.parse(e.target.result);
+                    fields = [];
+                    fieldGrid.innerHTML = '';
+                    template.forEach(f => addField(f.name, f.hint));
+                    closeTemplateManager();
+                } catch(err) {
+                    alert('Invalid template file');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // ========== WEBSOCKET & AUDIO ==========
         function syncFieldsToServer() {
             if (socket && socket.readyState === WebSocket.OPEN) {
                 const templateData = fields.map(f => ({ 
                     id: f.id, 
                     name: f.name, 
                     hint: f.hint,
-                    currentValue: f.value // <--- CRITICAL: Sending the data
+                    currentValue: f.value
                 }));
                 
                 const userNotes = document.getElementById('manualNotes').value;
 
-                // Send the new JSON message type the server expects
                 socket.send(JSON.stringify({
                     type: 'contextUpdate',
                     fields: templateData,
@@ -511,32 +1163,6 @@
             }
         }
 
-
-        function updateFieldValue(fieldId, value) {
-            const field = fields.find(f => f.id === fieldId);
-            if (!field || field.locked) return;
-
-            const cleanValue = (value === null || value === 'null') ? '' : value.trim();
-            
-            // 1. If server sends nothing, DO NOTHING. Keep existing data safe.
-            if (!cleanValue) return;
-
-            // 2. If server sends data, OVERWRITE. (Fixes duplication)
-            field.value = cleanValue;
-
-            const textarea = document.querySelector(`[data-field-id="${fieldId}"]`);
-            if (textarea) {
-                textarea.value = field.value;
-                textarea.style.height = 'auto';
-                textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-                
-                const row = document.getElementById(fieldId);
-                row.classList.add('updated');
-                setTimeout(() => row.classList.remove('updated'), 1000);
-            }
-        }
-
-        // --- AUDIO / WEBSOCKET ---
         function convertFloat32ToPCM16(float32Array) {
             const pcm16 = new Int16Array(float32Array.length);
             for (let i = 0; i < float32Array.length; i++) {
@@ -558,39 +1184,24 @@
                 let accum = 0;
                 let count = 0;
                 for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-                    accum += buffer[i]; count++;
+                    accum += buffer[i];
+                    count++;
                 }
                 result[offsetResult] = accum / count;
-                offsetResult++; offsetBuffer = nextOffsetBuffer;
+                offsetResult++;
+                offsetBuffer = nextOffsetBuffer;
             }
             return result;
         }
 
-        async function checkCapacitor() {
-            if (window.Capacitor && window.Capacitor.isNative) {
-                try {
-                    await Capacitor.Plugins.AndroidPermissions.requestPermissions({
-                        permissions: ['android.permission.RECORD_AUDIO', 'android.permission.FOREGROUND_SERVICE'] 
-                    });
-                    try {
-                        await Capacitor.Plugins.ForegroundService.startForegroundService({
-                            id: 123, title: "Bingo Notes Listening", body: "Recording in progress...", smallIcon: "ic_mic", 
-                        });
-                    } catch (e) { console.log("Foreground service skipped"); }
-                    
-                    if (Capacitor.Plugins.KeepAwake) { await Capacitor.Plugins.KeepAwake.keepAwake(); }
-                } catch (err) { console.warn("Native setup failed/skipped:", err); }
-            }
-        }
-
-        async function startRecording() {
+        async function startListening() {
             if (!currentWsUrl) {
-                alert("Please click the Gear ⚙️ icon to set your Server URL first.");
+                alert("Please click Settings ⚙️ to set your Server URL first.");
                 settingsBtn.click();
                 return;
             }
+            
             try {
-                await checkCapacitor(); 
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
                 });
@@ -599,8 +1210,10 @@
                 
                 socket.onopen = () => {
                     console.log('WebSocket connected');
-                    statusLight.style.background = '#28a745'; statusText.textContent = 'Recording...';
-                    reconnectAttempts = 0; syncFieldsToServer();
+                    statusDot.className = 'status-dot listening';
+                    statusText.textContent = 'Listening...';
+                    reconnectAttempts = 0;
+                    syncFieldsToServer();
                     
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const source = audioContext.createMediaStreamSource(mediaStream);
@@ -614,50 +1227,86 @@
                             socket.send(pcm16.buffer);
                         }
                     };
-                    source.connect(processor); processor.connect(audioContext.destination);
+                    source.connect(processor);
+                    processor.connect(audioContext.destination);
                 };
 
                 socket.onmessage = (event) => {
                     try {
                         const msg = JSON.parse(event.data);
                         if (msg.type === 'status') {
-                            statusLight.style.background = msg.active ? '#ffc107' : '#28a745';
-                            statusText.textContent = msg.active ? 'Analyzing...' : 'Recording...';
+                            statusDot.className = msg.active ? 'status-dot analyzing' : 'status-dot listening';
+                            statusText.textContent = msg.active ? 'Analyzing...' : 'Listening...';
                         } else if (msg.type === 'transcript') {
-                            transcriptBox.textContent = msg.text;
+                            transcriptText.textContent = msg.text;
                             if (msg.isFinal) fullTranscript += msg.text + '\n';
                         } else if (msg.type === 'templateUpdate' && msg.data) {
                             Object.keys(msg.data).forEach(key => updateFieldValue(key, msg.data[key]));
                         }
-                    } catch (err) { console.warn('Message error:', err); }
+                    } catch (err) {
+                        console.warn('Message error:', err);
+                    }
                 };
 
-                socket.onerror = (error) => { console.error('WS Error:', error); statusText.textContent = 'Connection error'; };
+                socket.onerror = (error) => {
+                    console.error('WS Error:', error);
+                    statusText.textContent = 'Connection error';
+                };
+                
                 socket.onclose = () => {
                     if (processor && mediaStream && mediaStream.active) {
                         if (reconnectAttempts < MAX_RECONNECT) {
-                            reconnectAttempts++; setTimeout(() => { stopRecording(); startRecording(); }, 1000);
-                        } else { stopRecording(); alert('Connection lost.'); }
+                            reconnectAttempts++;
+                            setTimeout(() => {
+                                stopListening();
+                                startListening();
+                            }, 1000);
+                        } else {
+                            stopListening();
+                            alert('Connection lost.');
+                        }
                     }
                 };
-                startBtn.disabled = true; stopBtn.disabled = false;
-            } catch (err) { alert('Mic error: ' + err.message); stopRecording(); }
+                
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                clearBtn.disabled = true;
+                clearBtn.style.opacity = '0.5';
+                
+            } catch (err) {
+                alert('Mic error: ' + err.message);
+                stopListening();
+            }
         }
 
-        function stopRecording() {
-            if (processor) { processor.disconnect(); processor = null; }
-            if (audioContext && audioContext.state !== 'closed') { audioContext.close(); audioContext = null; }
-            if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
+        function stopListening() {
+            if (processor) {
+                processor.disconnect();
+                processor = null;
+            }
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+                audioContext = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
             if (socket) {
                 if (socket.readyState === WebSocket.OPEN) socket.send('stop');
-                socket.close(); socket = null;
+                socket.close();
+                socket = null;
             }
-            statusLight.style.background = '#bbb'; statusText.textContent = 'Ready';
-            startBtn.disabled = false; stopBtn.disabled = true;
+            
+            statusDot.className = 'status-dot ready';
+            statusText.textContent = 'Ready';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            clearBtn.disabled = false;
+            clearBtn.style.opacity = '1';
         }
 
-        // --- REPOSITORY SYSTEM ---
-
+        // ========== REPOSITORY ==========
         function generateNoteMarkdown(note) {
             let text = `# ${note.template || 'Bingo Note'}\n**Date:** ${note.date}\n\n`;
             note.fields.forEach(f => text += `## ${f.label}\n${f.value}\n\n`);
@@ -668,26 +1317,23 @@
             const noteData = {
                 id: Date.now(),
                 date: new Date().toLocaleString(),
-                template: document.getElementById('template-dropdown')?.value || "General",
+                template: "Current Session",
                 fields: []
             };
 
-            // Grab Dynamic Fields
-            document.querySelectorAll('#fields-container .field-row').forEach(group => {
+            fields.forEach(f => {
                 noteData.fields.push({
-                    label: group.querySelector('.field-name').innerText,
-                    value: group.querySelector('.field-input').value
+                    label: f.name,
+                    value: f.value || ''
                 });
             });
 
-            // Grab User Notes
             const userNotes = document.getElementById('manualNotes').value;
             if (userNotes && userNotes.trim() !== "") {
                 noteData.fields.push({ label: "📝 User Notes", value: userNotes });
             }
             
-            // Add Transcript
-            if(fullTranscript && fullTranscript.trim() !== "") {
+            if (fullTranscript && fullTranscript.trim() !== "") {
                 noteData.fields.push({ label: "Full Transcript", value: fullTranscript });
             }
 
@@ -696,15 +1342,10 @@
             localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
             
             renderHistory();
-            
-            // Auto-open history
-            const container = document.getElementById('historyContainer');
-            container.style.display = 'block';
+            document.getElementById('historyContainer').classList.add('active');
             document.getElementById('viewHistoryBtn').innerText = "Hide Saved Notes";
-            // Scroll to bottom
-            window.scrollTo(0, document.body.scrollHeight);
             
-            alert("Note Saved to Repository! ✅");
+            alert("Note Saved! ✅");
         }
 
         function renderHistory() {
@@ -713,7 +1354,7 @@
             container.innerHTML = '';
 
             if (history.length === 0) {
-                container.innerHTML = '<p style="color:#777; text-align:center;">No saved notes yet.</p>';
+                container.innerHTML = '<p style="color:#777; text-align:center; padding:20px;">No saved notes yet.</p>';
                 return;
             }
 
@@ -721,56 +1362,106 @@
                 const card = document.createElement('div');
                 card.className = "note-card";
                 
-                // Show first 2 fields as preview
-                let contentPreview = note.fields.slice(0, 2).map(f => `<b>${f.label}:</b> ${f.value.substring(0, 50)}...`).join('<br>');
+                const contentPreview = note.fields.slice(0, 2).map(f => `<b>${f.label}:</b> ${f.value.substring(0, 50)}...`).join('<br>');
                 
                 card.innerHTML = `
                     <div class="note-header">
-                        <strong style="color:#007bff;">${note.template}</strong>
-                        <small style="color:#666;">${note.date}</small>
+                        <div class="note-title">${note.template}</div>
+                        <div class="note-date">${note.date}</div>
                     </div>
-                    <div class="note-content">${contentPreview}</div>
+                    <div class="note-preview">${contentPreview}</div>
                     <div class="note-actions">
-                        <button class="note-btn" style="background:#28a745;" onclick="shareNoteNative(${note.id})">📤 Share (MD)</button>
-                        <button class="note-btn" style="background:#17a2b8;" onclick="copyNote(${note.id})">📋 Copy</button>
-                        <button class="note-btn" style="background:#dc3545;" onclick="deleteNote(${note.id})">🗑️ Delete</button>
+                        <button class="note-btn" style="background:#718096;" onclick="resumeNote(${note.id})">▶️ Resume</button>
+                        <button class="note-btn" style="background:#48bb78;" onclick="shareNote(${note.id})">📤 Share</button>
+                        <button class="note-btn" style="background:#4299e1;" onclick="copyNote(${note.id})">📋 Copy</button>
+                        <button class="note-btn" style="background:#e53e3e;" onclick="deleteNote(${note.id})">🗑️ Delete</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // --- NEW: NATIVE ANDROID SHARING (Fixes "Not Supported" Error) ---
-        async function shareNoteNative(id) {
+        window.resumeNote = function(id) {
+            const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
+            const note = history.find(n => n.id === id);
+            if (!note) {
+                alert("Note not found!");
+                return;
+            }
+            
+            if (!confirm(`Resume this note set from ${note.date}?`)) return;
+            
+            if (mediaStream && mediaStream.active) {
+                stopListening();
+            }
+            
+            fields = [];
+            fieldGrid.innerHTML = '';
+            
+            note.fields.forEach(field => {
+                if (field.label === "Full Transcript" || field.label === "📝 User Notes") return;
+                
+                const fieldId = field.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                const hint = `Extract information about ${field.label}`;
+                
+                fields.push({ 
+                    id: fieldId, 
+                    name: field.label, 
+                    hint: hint, 
+                    value: field.value,
+                    locked: false 
+                });
+                
+                renderField(fieldId, field.label, hint);
+            });
+            
+            const userNotesField = note.fields.find(f => f.label === "📝 User Notes");
+            if (userNotesField) {
+                document.getElementById('manualNotes').value = userNotesField.value;
+            }
+            
+            const transcriptField = note.fields.find(f => f.label === "Full Transcript");
+            if (transcriptField) {
+                fullTranscript = transcriptField.value;
+            }
+            
+            syncFieldsToServer();
+            document.getElementById('historyContainer').classList.remove('active');
+            document.getElementById('viewHistoryBtn').innerText = "Show Saved Notes";
+            window.scrollTo(0, 0);
+            
+            alert(`✅ Resumed note set from ${note.date}`);
+        };
+
+        window.shareNote = async function(id) {
             const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
             if (!note) return;
             const txt = generateNoteMarkdown(note);
 
             try {
-                // 1. Try Native Capacitor Plugin (The Fix)
                 if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Share) {
                     await Capacitor.Plugins.Share.share({
                         title: 'Bingo Note',
                         text: txt,
                         dialogTitle: 'Share Note'
                     });
-                } 
-                // 2. Fallback to Web API (Likely to fail on your phone)
-                else if (navigator.share) {
+                } else if (navigator.share) {
                     await navigator.share({ title: 'Bingo Note', text: txt });
-                }
-                else {
-                    throw new Error("No share supported");
+                } else {
+                    throw new Error("No share");
                 }
             } catch(e) {
-                copyNote(id);
-                alert("Share not supported (Native Plugin Missing). Copied to clipboard.");
+                await navigator.clipboard.writeText(txt);
+                alert("Copied to clipboard! 📋");
             }
-        }
-        
+        };
+
         async function shareAllNotes() {
             const history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
-            if (history.length === 0) { alert("No notes to share!"); return; }
+            if (history.length === 0) {
+                alert("No notes to share!");
+                return;
+            }
 
             let fullContent = "# Bingo Notes Archive\n\n";
             history.forEach(note => {
@@ -785,40 +1476,61 @@
                         dialogTitle: 'Share Archive'
                     });
                 } else if (navigator.share) {
-                    await navigator.share({
-                        title: 'Bingo Archive',
-                        text: fullContent
-                    });
+                    await navigator.share({ title: 'Bingo Archive', text: fullContent });
                 } else {
                     throw new Error("No Share");
                 }
             } catch(e) {
-                alert("Share failed. Copied to clipboard.");
-                navigator.clipboard.writeText(fullContent);
+                await navigator.clipboard.writeText(fullContent);
+                alert("Archive copied to clipboard! 📋");
             }
         }
 
-        async function copyNote(id) {
+        window.copyNote = async function(id) {
             const note = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]').find(n => n.id === id);
             if (!note) return;
             await navigator.clipboard.writeText(generateNoteMarkdown(note));
             alert("Copied to clipboard! 📋");
-        }
+        };
 
         window.deleteNote = function(id) {
-            if(!confirm("Delete this note?")) return;
+            if (!confirm("Delete this note?")) return;
             let history = JSON.parse(localStorage.getItem('bingoNotesHistory') || '[]');
             history = history.filter(n => n.id !== id);
             localStorage.setItem('bingoNotesHistory', JSON.stringify(history));
             renderHistory();
         };
 
-        // --- BUTTON ACTIONS ---
-        reportBtn.addEventListener('click', saveCurrentNote);
+        // ========== EVENT LISTENERS ==========
+        startBtn.addEventListener('click', startListening);
+        stopBtn.addEventListener('click', stopListening);
+        saveBtn.addEventListener('click', saveCurrentNote);
         
+        clearBtn.addEventListener('click', () => {
+            if (mediaStream && mediaStream.active) {
+                alert('Please stop listening before clearing data.');
+                return;
+            }
+            
+            if (!confirm('Clear all current form data?')) return;
+            
+            fields.forEach(f => f.value = '');
+            fieldGrid.querySelectorAll('.field-value').forEach(el => el.textContent = '');
+            document.getElementById('manualNotes').value = '';
+            transcriptText.textContent = 'Waiting for audio...';
+            fullTranscript = '';
+            
+            // Update all indicators
+            fieldGrid.querySelectorAll('.has-content-indicator, .empty-indicator').forEach(badge => {
+                badge.className = 'empty-indicator';
+                badge.textContent = '⚠ Empty';
+            });
+        });
+
         document.getElementById('shareAllBtn').addEventListener('click', shareAllNotes);
+        
         document.getElementById('clearRepoBtn').addEventListener('click', () => {
-            if(confirm("Permanently delete ALL saved notes?")) {
+            if (confirm("Permanently delete ALL saved notes?")) {
                 localStorage.removeItem('bingoNotesHistory');
                 renderHistory();
             }
@@ -827,79 +1539,29 @@
         document.getElementById('viewHistoryBtn').addEventListener('click', () => {
             const container = document.getElementById('historyContainer');
             const btn = document.getElementById('viewHistoryBtn');
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
+            
+            if (container.classList.contains('active')) {
+                container.classList.remove('active');
+                btn.innerText = "Show Saved Notes";
+            } else {
+                container.classList.add('active');
                 btn.innerText = "Hide Saved Notes";
                 renderHistory();
-            } else {
-                container.style.display = 'none';
-                btn.innerText = "Show Saved Notes";
             }
         });
 
-        clearBtn.addEventListener('click', () => {
-            if (!confirm('Clear all current form data?')) return;
-            fields.forEach(f => f.value = '');
-            document.querySelectorAll('.field-input').forEach(input => input.value = '');
-            const manual = document.getElementById('manualNotes');
-            if(manual) manual.value = '';
-            transcriptBox.textContent = 'Waiting for audio...';
-            fullTranscript = '';
-        });
-        
-        // ... Template Buttons (Same as before) ...
-        document.getElementById('save-template-btn').addEventListener('click', () => {
-            const name = prompt('Template Name:'); if(!name) return;
-            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
-            t[name] = fields.map(f=>({name:f.name,hint:f.hint}));
-            localStorage.setItem('voice_templates',JSON.stringify(t));
-            updateTemplateDropdown();
-        });
-        document.getElementById('load-template-btn').addEventListener('click', () => {
-            const name = templateDropdown.value; if(!name) return;
-            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}')[name];
-            if(t) { fields=[]; fieldsContainer.innerHTML=''; t.forEach(f=>addField(f.name,f.hint)); }
-        });
-        
-        function updateTemplateDropdown() {
-            const t = JSON.parse(localStorage.getItem('voice_templates')||'{}');
-            templateDropdown.innerHTML = '<option value="">-- Select Template --</option>';
-            Object.keys(t).forEach(n => {
-                const o = document.createElement('option'); o.value=n; o.innerText=n; templateDropdown.appendChild(o);
-            });
-        }
-
-        // --- EVENTS ---
-        startBtn.addEventListener('click', startRecording);
-        stopBtn.addEventListener('click', stopRecording);
-        addFieldBtn.addEventListener('click', () => {
-            if(fieldNameInput.value.trim()) { 
-                addField(fieldNameInput.value.trim(), fieldHintInput.value.trim()||'Hint');
-                fieldNameInput.value=''; fieldHintInput.value='';
-            }
-        });
-
+        // ========== INITIALIZATION ==========
         initDefaultFields();
-        initTemplates(); // <--- This loads your custom templates
-        updateTemplateDropdown();
-        renderHistory(); // Initial render of any saved notes
- 
-        // Trigger sync when User Notes change
-        document.getElementById('manualNotes').addEventListener('input', (e) => {
+        initTemplates();
+        renderHistory();
+
+        // Sync on user notes change
+        document.getElementById('manualNotes').addEventListener('input', () => {
             clearTimeout(window.noteSyncTimer);
-            window.noteSyncTimer = setTimeout(syncFieldsToServer, 2000);
+            window.noteSyncTimer = setTimeout(syncFieldsToServer, 5000);
         });
 
-        // Trigger sync when AI or User updates a field value
-        const originalUpdateField = window.updateFieldData;
-        window.updateFieldData = function(id, value) {
-            originalUpdateField(id, value); // Run original logic
-            
-            // Debounce the sync so we don't flood the server
-            clearTimeout(window.fieldSyncTimer);
-            window.fieldSyncTimer = setTimeout(syncFieldsToServer, 2000);
-        };
-
+        console.log('%c🎙️ Bingo Notes Ready!', 'color: #667eea; font-size: 16px; font-weight: bold;');
     </script>
 </body>
 </html>
