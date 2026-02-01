@@ -6,15 +6,6 @@ on:
       - main
       - Bento-Branch  # <--- Add your new branch name here
   
-  # This allows you to manually click a "Run Workflow" button in the Actions tab
-  workflow_dispatch: 
-
-jobs:
-  build:
-    name: Build APK
-    runs-on: ubuntu-latest
-    # ... (rest of your existing workflow code remains the same)
-
 jobs:
   build:
     runs-on: ubuntu-latest
