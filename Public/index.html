@@ -3,143 +3,1482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bingo Notes</title>
+    <title>Bingo Notes - Template Management</title>
     <style>
-        /* --- [PRESERVED UI STYLES FROM YOUR FILE] --- */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; touch-action: manipulation; overflow-x: hidden; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            margin: 0;
+            padding: 0;
+        }
         
-        /* Layout & Header */
-        .bento-container { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
-        .bento-header { position: sticky; top: 0; z-index: 100; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .logo-section { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { font-size: 1.8em; }
-        .logo-text h1 { font-size: 1.3em; font-weight: 700; line-height: 1; }
-        .logo-text .tagline { font-size: 0.75em; opacity: 0.9; margin-top: 2px; }
-        .settings-icon { background: rgba(255,255,255,0.2); border: none; color: white; width: 44px; height: 44px; border-radius: 10px; font-size: 1.4em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        
-        /* Template Bar */
-        .template-bar { background: white; border-bottom: 2px solid #e2e8f0; padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .template-selector { flex: 1; min-width: 200px; }
-        .template-select { width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95em; font-weight: 600; color: #2d3748; background: white; cursor: pointer; }
-        .template-actions { display: flex; gap: 8px; }
-        .template-btn { padding: 10px 16px; border: 2px solid #e2e8f0; border-radius: 8px; background: white; font-size: 0.85em; font-weight: 600; color: #4a5568; cursor: pointer; }
-        .template-btn.primary { background: #667eea; color: white; border-color: #667eea; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
 
-        /* Status & Controls */
-        .status-banner { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-        .status-left { display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #cbd5e0; transition: background 0.3s; }
+        /* ========== TEMPLATE SELECTOR BAR ========== */
+        .template-bar {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .template-selector {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .template-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #2d3748;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .template-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .template-btn {
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .template-btn:hover {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+        }
+
+        .template-btn:active {
+            transform: scale(0.97);
+        }
+
+        .template-btn.primary {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .template-btn.primary:hover {
+            background: #5a67d8;
+        }
+
+        /* ========== BENTO GRID LAYOUT ========== */
+        
+        /* Container */
+        .bento-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== STICKY HEADER ========== */
+        .bento-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Top Bar with Logo & Settings */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: relative; /* For absolute positioning of current note indicator */
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon {
+            font-size: 2em;
+            line-height: 1;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        /* Status Banner - REMOVED (kept inline in header now) */
+        /* Status styles (now in header) */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #cbd5e0;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+
         .status-dot.ready { background: #48bb78; }
         .status-dot.recording { background: #4299e1; animation: pulse 2s infinite; }
         .status-dot.analyzing { background: #fbbf24; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
-        
-        .control-buttons { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; padding: 12px 20px; background: white; border-bottom: 1px solid #e2e8f0; }
-        .btn { padding: 12px 8px; border: none; border-radius: 10px; font-size: 0.9em; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .status-text {
+            font-weight: 600;
+            color: white;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        /* Control Buttons */
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:active { transform: scale(0.97); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .btn-start { background: #48bb78; color: white; }
         .btn-stop { background: #e53e3e; color: white; }
-        .btn-save { background: #667eea; color: white; position: relative; }
+        .btn-save { 
+            background: #667eea; 
+            color: white; 
+            position: relative;
+        }
+        .btn-success { background: #48bb78; color: white; }
         .btn-clear { background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; }
 
+        /* Export Dropdown Menu */
+        .export-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 250px;
+            display: none;
+            overflow: hidden;
+        }
+
+        .export-menu.active {
+            display: block;
+        }
+
+        .export-menu-item {
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f7fafc;
+            font-size: 0.95em;
+            color: #2d3748;
+        }
+
+        .export-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .export-menu-item:hover {
+            background: #f7fafc;
+        }
+
+        .export-menu-item:active {
+            background: #edf2f7;
+        }
+
+        .export-menu-icon {
+            font-size: 1.3em;
+            width: 24px;
+            text-align: center;
+        }
+
+        .export-menu-text {
+            flex: 1;
+        }
+
+        .export-menu-label {
+            font-weight: 600;
+            display: block;
+        }
+
+        .export-menu-desc {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+
+        .toast.active {
+            display: flex;
+            animation: toastSlideUp 0.3s ease-out;
+        }
+
+        @keyframes toastSlideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
         /* Live Transcript */
-        .live-transcript { padding: 12px 20px; background: white; border-bottom: 2px solid #e2e8f0; max-height: 80px; overflow-y: auto; }
-        .transcript-text { font-size: 0.85em; color: #2d3748; line-height: 1.5; font-style: italic; }
+        .live-transcript {
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            max-height: 80px;
+            overflow-y: auto;
+        }
 
-        /* Bento Grid Content */
-        .bento-content { flex: 1; padding: 16px; overflow-y: auto; }
-        .field-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
-        @media (min-width: 600px) { .field-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .bento-container { max-width: 1400px; margin: 0 auto; } .field-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } .bento-content { padding: 24px; } }
+        .transcript-label {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
 
-        /* Field Cards */
-        .field-card { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; transition: all 0.3s; position: relative; overflow: hidden; }
-        .field-card.updated { border-color: #48bb78; animation: cardPulse 0.6s ease-out; }
-        @keyframes cardPulse { 0% { background: white; } 50% { background: #f0fff4; } 100% { background: white; } }
+        .transcript-text {
+            font-size: 0.85em;
+            color: #2d3748;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        /* ========== MAIN CONTENT AREA ========== */
+        .bento-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        /* ========== BENTO GRID - PORTRAIT MODE (Default) ========== */
+        .field-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr;
+        }
+
+        /* Field Card */
+        .field-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .field-card:active {
+            transform: scale(0.98);
+        }
+
+        .field-card.updated {
+            border-color: #48bb78;
+            animation: cardPulse 0.6s ease-out;
+        }
+
+        @keyframes cardPulse {
+            0% { background: white; }
+            50% { background: #f0fff4; }
+            100% { background: white; }
+        }
+
+        .field-card.locked {
+            background: #fffbeb;
+            border-color: #fbbf24;
+        }
+
+        .field-card.collapsed .field-content {
+            display: none;
+        }
+
+        /* Drag and Drop States */
+        .field-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            cursor: grabbing;
+        }
+
+        .field-card.drag-over {
+            border-color: #667eea;
+            border-style: dashed;
+            background: #f0f4ff;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .template-drag-handle {
+            cursor: grab;
+            touch-action: none;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .template-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        /* Field Header */
+        .field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .field-info {
+            flex: 1;
+        }
+
+        .field-name {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .field-hint {
+            font-size: 0.8em;
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .field-actions-column {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .field-actions {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f7fafc;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+
+        .icon-btn.lock { background: #fff3cd; }
+        .icon-btn.delete { background: #fee; color: #c53030; }
+
+        /* Status badge on right edge below buttons */
+        .field-status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 700;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .field-status-badge.empty-indicator {
+            background: #fee;
+            color: #c53030;
+        }
+
+        .field-status-badge.has-content-indicator {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        /* Field Content */
+        .field-content {
+            margin-top: 12px;
+        }
+
+        .field-value {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.95em;
+            color: #2d3748;
+            line-height: 1.6;
+            min-height: 60px;
+            height: auto;
+            overflow: hidden;
+            width: 100%;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .field-card:not(.collapsed) .field-value {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .field-card.collapsed .field-content {
+            display: none;
+        }
+
+        .field-value:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .field-card.locked .field-value {
+            background: #fffbeb;
+            border-color: #fbbf24;
+        }
+
+        .field-value::placeholder {
+            color: #cbd5e0;
+            font-style: italic;
+        }
+
+        /* Empty/Has Data Indicators */
+        .empty-indicator {
+            display: inline-block;
+            background: #fee;
+            color: #c53030;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .has-content-indicator {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        /* ========== RESPONSIVE BREAKPOINTS ========== */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .field-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 600px) and (orientation: portrait) {
+            .field-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 768px) and (orientation: landscape) {
+            .field-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .bento-container {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .field-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+
+            .bento-content {
+                padding: 24px;
+            }
+
+            .field-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+            .icon-btn:hover {
+                background: #edf2f7;
+            }
+        }
+
+        /* ========== FLOATING ACTION BUTTON ========== */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 1.8em;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            z-index: 90;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        @media (min-width: 1024px) {
+            .fab {
+                display: none;
+            }
+        }
+
+        /* ========== FIELD MANAGEMENT BUTTONS ========== */
+        .field-management {
+            display: flex;
+            justify-content: center;
+            padding: 8px 20px 12px;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+        }
         
-        .field-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; cursor: pointer; }
-        .field-name { font-size: 1.05em; font-weight: 700; color: #2d3748; margin-bottom: 4px; }
-        .field-hint { font-size: 0.8em; color: #a0aec0; font-style: italic; }
-        .field-value { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95em; color: #2d3748; line-height: 1.6; min-height: 60px; width: 100%; font-family: inherit; resize: none; max-height: 220px; overflow-y: auto; }
-        .field-value:focus { outline: none; border-color: #667eea; background: white; }
+        @media (max-width: 600px) {
+            .field-management {
+                padding: 8px 16px 12px;
+            }
+        }
 
-        /* User Notes Special Styling */
-        .user-notes-card { border-color: #fbd38d; background: #fffaf0; }
-        .user-notes-card .field-name { color: #c05621; }
-        .user-notes-card .field-value { border-color: #fbd38d; background: white; }
+        .field-mgmt-btn {
+            padding: 8px 20px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 150px;
+        }
 
-        /* Modals & Menus (Simplified for Merged Logic) */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: white; border-radius: 16px; padding: 24px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        
-        /* Toasts */
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2d3748; color: white; padding: 16px 24px; border-radius: 12px; display: none; align-items: center; gap: 12px; font-weight: 600; z-index: 2000; }
-        .toast.active { display: flex; animation: toastSlideUp 0.3s ease-out; }
-        @keyframes toastSlideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .field-mgmt-btn:active {
+            background: #edf2f7;
+            transform: scale(0.98);
+        }
+
+        /* ========== MODAL OVERLAY ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .modal-close {
+            background: #f7fafc;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .modal-close:active {
+            background: #edf2f7;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #667eea;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 8px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Template Manager Modal Specific */
+        .template-list {
+            margin: 20px 0;
+        }
+
+        .template-item {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .template-item:hover {
+            border-color: #cbd5e0;
+            background: white;
+        }
+
+        .template-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .template-item-name {
+            font-weight: 700;
+            font-size: 1.05em;
+            color: #2d3748;
+        }
+
+        .template-item-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            font-weight: 700;
+        }
+
+        .template-item-desc {
+            font-size: 0.85em;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .template-item-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8em;
+            color: #a0aec0;
+            margin-bottom: 12px;
+        }
+
+        .template-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .template-item-btn {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-item-btn:hover {
+            border-color: #cbd5e0;
+        }
+
+        .template-item-btn.danger {
+            color: #c53030;
+            border-color: #feb2b2;
+        }
+
+        .template-item-btn.danger:hover {
+            background: #fff5f5;
+        }
+
+        /* Template Tabs */
+        .template-tab {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-tab:hover {
+            color: #4a5568;
+            background: #f7fafc;
+        }
+
+        .template-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        /* Category Grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .category-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 24px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            border: 2px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .category-card:active {
+            transform: scale(0.98);
+        }
+
+        .category-icon {
+            font-size: 2.5em;
+            margin-bottom: 8px;
+        }
+
+        .category-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .category-count {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        /* Different gradient colors for categories */
+        .category-card.business { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .category-card.real-estate { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .category-card.legal { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .category-card.medical { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .category-card.student { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .category-card.journalism { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .category-card.planning { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #2d3748; }
+
+        @media (max-width: 600px) {
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Field Builder in Template Editor */
+        .field-builder {
+            margin: 20px 0;
+        }
+
+        .field-builder-item {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .field-builder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .field-builder-inputs {
+            display: grid;
+            gap: 8px;
+        }
+
+        .btn-add-field {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            color: #4a5568;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn-add-field:hover {
+            background: #edf2f7;
+            border-color: #a0aec0;
+        }
+
+        /* Fullscreen Mode */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 99;
+            display: none;
+            flex-direction: column;
+        }
+
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+
+        .fullscreen-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .fullscreen-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .fullscreen-field-info {
+            flex: 1;
+        }
+
+        .fullscreen-field-label {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .fullscreen-hint {
+            font-size: 0.9em;
+            color: #718096;
+            font-style: italic;
+        }
+
+        .fullscreen-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .fullscreen-btn {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            color: #4a5568;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            min-width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-btn:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .fullscreen-btn:active {
+            transform: scale(0.95);
+        }
+
+        .fullscreen-close {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            color: #4a5568;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            font-size: 1.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-close:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .fullscreen-value {
+            font-size: 1.05em;
+            line-height: 1.8;
+            color: #2d3748;
+            white-space: pre-wrap;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            font-family: inherit;
+            resize: none;
+            flex: 1;
+            min-height: 300px;
+        }
+
+        .fullscreen-value:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+/* ========== NOTES MANAGEMENT ========== */
+/* Current note indicator in header (centered between logo and settings) */
+.current-note-header {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 60%;
+    pointer-events: none; /* Don't block clicks on logo or settings */
+    padding: 0 10px;
+}
+
+.current-note-header.active {
+    display: flex;
+}
+
+.current-note-name {
+    color: white;
+    font-weight: 700;
+    font-size: 0.95em;
+    opacity: 0.95;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.current-note-saved {
+    color: white;
+    font-size: 0.75em;
+    opacity: 0.8;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+@media (max-width: 500px) {
+    .current-note-header {
+        display: none !important; /* Hide only on very small mobile screens */
+    }
+}
+
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:20px 0}
+.note-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:16px;cursor:pointer;transition:all .2s}
+.note-card:hover{border-color:#667eea;transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,.15)}
+.note-card.active{border-color:#3b82f6;background:#eff6ff}
+.note-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.note-title{font-weight:700;font-size:1.05em;color:#2d3748;flex:1}
+.note-status{background:#48bb78;color:#fff;padding:4px 8px;border-radius:4px;font-size:.7em;font-weight:700;text-transform:uppercase}
+.note-status.draft{background:#fbbf24}
+.note-meta{font-size:.8em;color:#718096;margin-bottom:8px}
+.note-template{font-size:.85em;color:#667eea;font-weight:600;margin-bottom:8px}
+.note-preview{font-size:.85em;color:#4a5568;line-height:1.4;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-actions{display:flex;gap:6px}
+.note-action-btn{flex:1;padding:6px;border:1px solid #e2e8f0;border-radius:6px;background:#f7fafc;font-size:.8em;font-weight:600;cursor:pointer;transition:all .2s}
+.note-action-btn:hover{background:#edf2f7}
+.note-action-btn.danger{color:#c53030}
+.note-action-btn.danger:hover{background:#fff5f5}
+.search-filter-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.95em}
+.search-input:focus{outline:none;border-color:#667eea}
+.filter-select{padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.95em;background:#fff;cursor:pointer}
+.filter-select:focus{outline:none;border-color:#667eea}
+.empty-state{text-align:center;padding:60px 20px;color:#a0aec0}
+.empty-state-icon{font-size:4em;margin-bottom:16px}
+.empty-state-title{font-size:1.3em;font-weight:700;margin-bottom:8px;color:#4a5568}
+.empty-state-desc{font-size:.95em}
+.template-btn.success{background:#48bb78;color:#fff;border-color:#48bb78}
+.template-btn.success:hover{background:#38a169}
+
     </style>
 </head>
 <body>
     <div class="bento-container">
-        <!-- HEADER -->
+        <!-- ========== STICKY HEADER ========== -->
         <div class="bento-header">
+            <!-- Top Bar -->
             <div class="header-top">
                 <div class="logo-section">
                     <div class="logo-icon">🎙️</div>
-                    <div class="logo-text"><h1>Bingo Notes</h1><div class="tagline">Voice-powered insights</div></div>
                 </div>
-                <button class="settings-icon" id="settingsBtn">⚙️</button>
-            </div>
-
-            <!-- Template Bar -->
-            <div class="template-bar">
-                <div class="template-selector">
-                    <select class="template-select" id="templateSelect"><option value="">Loading templates...</option></select>
+                
+                <!-- Current Note Indicator in Header -->
+                <div class="current-note-header" id="currentNoteInfo">
+                    <div class="current-note-name" id="currentNoteTitle"></div>
+                    <div class="current-note-saved" id="currentNoteMeta"></div>
                 </div>
-                <!-- Hidden inputs for logic compatibility -->
-                <input type="hidden" id="manualNotes" value=""> 
-            </div>
-
-            <!-- Status -->
-            <div class="status-banner">
-                <div class="status-left">
+                
+                <!-- Status Indicator (moved from banner) -->
+                <div class="header-status">
                     <div class="status-dot ready" id="statusDot"></div>
                     <div class="status-text" id="statusText">Ready</div>
                 </div>
-                <div class="audio-source">🎤 Microphone</div>
             </div>
 
-            <!-- Transcript -->
+            <!-- Template Selector Bar -->
+            <div class="template-bar">
+                <div class="template-selector">
+                    <select class="template-select" id="templateSelect" onchange="loadTemplate()">
+                        <option value="">Select a template...</option>
+                    </select>
+                </div>
+                
+                <div class="template-actions">
+                    <button class="template-btn" onclick="openTemplateManager()">📋 Templates</button>
+                    <button class="template-btn success" onclick="openNotesLibrary()">📚 My Notes</button>
+                    <button class="template-btn primary" onclick="startNewNote()">➕ New Note</button>
+                </div>
+            </div>
+
+            <!-- Live Transcript -->
             <div class="live-transcript">
+                <div class="transcript-label">Live Transcript</div>
                 <div class="transcript-text" id="transcriptText">Waiting for audio...</div>
             </div>
 
-            <!-- Controls -->
+            <!-- Control Buttons -->
             <div class="control-buttons">
-                <button class="btn btn-start" id="startBtn">▶ Start</button>
-                <button class="btn btn-stop" id="stopBtn" disabled>⏹ Stop</button>
-                <button class="btn btn-save" id="saveBtn">💾 Save</button>
-                <button class="btn btn-clear" id="clearBtn">🗑️ Clear</button>
+                <button class="btn btn-start" id="startBtn">▶️ Start Listening</button>
+                <button class="btn btn-stop" id="stopBtn" disabled>⏹️ Stop</button>
+                <button class="btn btn-save" id="saveBtn" onclick="toggleExportMenu(event)">
+                    💾 Export ▼
+                    <div class="export-menu" id="exportMenu">
+                        <div class="export-menu-item" onclick="copyToClipboard(event)">
+                            <span class="export-menu-icon">📋</span>
+                            <div class="export-menu-text">
+                                <span class="export-menu-label">Copy to Clipboard</span>
+                                <span class="export-menu-desc">Paste anywhere</span>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="shareNote(event)" id="shareMenuItem">
+                            <span class="export-menu-icon">📱</span>
+                            <div class="export-menu-text">
+                                <span class="export-menu-label">Share</span>
+                                <span class="export-menu-desc">Send to any app</span>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="emailNote(event)">
+                            <span class="export-menu-icon">✉️</span>
+                            <div class="export-menu-text">
+                                <span class="export-menu-label">Email</span>
+                                <span class="export-menu-desc">Send via email client</span>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="downloadMarkdown(event)">
+                            <span class="export-menu-icon">📥</span>
+                            <div class="export-menu-text">
+                                <span class="export-menu-label">Download Markdown</span>
+                                <span class="export-menu-desc">Save .md file</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+                <button class="btn btn-success" onclick="saveCurrentNote()">💾 Save Note</button>
+            </div>
+
+            <!-- Field Management Buttons -->
+            <div class="field-management">
+                <button class="field-mgmt-btn" id="toggleExpandBtn" onclick="toggleExpandCollapse()">▼ Expand All</button>
             </div>
         </div>
 
-        <!-- CONTENT -->
+        <!-- ========== MAIN CONTENT ========== -->
         <div class="bento-content">
-            <div class="field-grid" id="fieldGrid"></div>
+            <!-- Field Grid (Bento Layout) -->
+            <div class="field-grid" id="fieldGrid">
+                <!-- Fields will be dynamically loaded here -->
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="fab" onclick="openAddFieldModal()">+</button>
+    </div>
+
+    <!-- ========== MODALS ========== -->
+
+    <!-- Add Field Modal -->
+    <div class="modal-overlay" id="addFieldModal" onclick="closeAddFieldModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">➕ Add New Field</div>
+                <button class="modal-close" onclick="closeAddFieldModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Field Name</label>
+                <input type="text" class="form-input" id="fieldNameInput" placeholder="e.g., Client Name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Extraction Hint</label>
+                <input type="text" class="form-input" id="fieldHintInput" placeholder="e.g., Extract full name">
+            </div>
+            <button class="btn-primary" onclick="addField()">+ Add Field</button>
+        </div>
+    </div>
+
+    <!-- Edit Field Modal -->
+    <div class="modal-overlay" id="editFieldModal" onclick="closeEditFieldModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">✏️ Edit Field</div>
+                <button class="modal-close" onclick="closeEditFieldModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Field Name</label>
+                <input type="text" class="form-input" id="editFieldNameInput">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Extraction Hint</label>
+                <input type="text" class="form-input" id="editFieldHintInput">
+            </div>
+            <button class="btn-primary" onclick="saveFieldEdit()">💾 Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Template Manager Modal -->
+    <div class="modal-overlay" id="templateManagerModal" onclick="closeTemplateManager(event)">
+        <div class="modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📚 Template Library & Manager</div>
+                <button class="modal-close" onclick="closeTemplateManager()">×</button>
+            </div>
             
-            <!-- Dedicated User Notes Section (Always present) -->
-            <div style="margin-top: 20px;">
-                <div class="field-card user-notes-card">
-                    <div class="field-header">
-                        <div class="field-name">📝 User Manual Notes</div>
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
+                <button id="myTemplatesTab" class="template-tab active" onclick="switchTab('myTemplates')">
+                    📋 My Templates (<span id="myTemplatesCount">0</span>)
+                </button>
+                <button id="libraryTab" class="template-tab" onclick="switchTab('library')">
+                    🏪 Template Library (<span id="libraryCount">21</span>)
+                </button>
+            </div>
+            
+            <!-- My Templates View -->
+            <div id="myTemplatesView" class="template-list">
+                <!-- User's templates will be rendered here -->
+            </div>
+
+            <!-- Library View -->
+            <div id="libraryView" class="template-list" style="display: none;">
+                <!-- Category Grid (shows by default) -->
+                <div id="categoryGrid" class="category-grid">
+                    <!-- Categories will be rendered here -->
+                </div>
+                
+                <!-- Template List (shows when category selected) -->
+                <div id="libraryTemplateList" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <button class="btn" onclick="showCategoryGrid()" style="background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0;">
+                            ← Back to Categories
+                        </button>
                     </div>
-                    <div class="field-content">
-                        <textarea class="field-value" id="userNotesInput" placeholder="Type your private notes here... they are sent to the AI as context but not overwritten."></textarea>
-                    </div>
+                    <div id="libraryTemplateCards"></div>
                 </div>
             </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button class="btn-primary" onclick="importTemplate()" style="flex: 1;">📤 Import JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Template Modal -->
+    <div class="modal-overlay" id="templateEditorModal" onclick="closeTemplateEditor(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="templateEditorTitle">➕ Create Template</div>
+                <button class="modal-close" onclick="closeTemplateEditor()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Template Name</label>
+                <input type="text" class="form-input" id="templateNameInput" placeholder="e.g., Franchise Evaluation">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-input" id="templateDescInput" placeholder="Brief description of this template">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input type="text" class="form-input" id="templateCategoryInput" placeholder="e.g., Business, Legal, Medical">
+            </div>
+
+            <div class="field-builder" id="fieldBuilder">
+                <label class="form-label">Fields</label>
+                <!-- Field builder items will be rendered here -->
+            </div>
+
+            <button class="btn-add-field" onclick="addTemplateField()">+ Add Field</button>
+            
+            <button class="btn-primary" onclick="saveTemplate()">💾 Save Template</button>
+        </div>
+    </div>
+
+    <!-- Save as Template Modal -->
+    <div class="modal-overlay" id="saveAsTemplateModal" onclick="closeSaveAsTemplate(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">💾 Save as Template</div>
+                <button class="modal-close" onclick="closeSaveAsTemplate()">×</button>
+            </div>
+            
+            <!-- Current Template Info (if loaded) -->
+            <div id="currentTemplateInfo" style="display: none; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size: 0.9em; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
+                    Currently using template:
+                </div>
+                <div id="currentTemplateName" style="font-size: 1.1em; font-weight: 700; color: #1e3a8a;">
+                    Template Name
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Template Name</label>
+                <input type="text" class="form-input" id="saveTemplateName" placeholder="e.g., My Custom Template">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-input" id="saveTemplateDesc" placeholder="Brief description">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input type="text" class="form-input" id="saveTemplateCategory" placeholder="e.g., Business, Legal, Medical">
+            </div>
+            
+            <!-- Buttons change based on whether template is loaded -->
+            <div id="updateCurrentTemplateBtn" style="display: none;">
+                <button class="btn-primary" onclick="updateCurrentTemplate()" style="background: #3b82f6;">
+                    🔄 Update "<span id="updateBtnTemplateName"></span>"
+                </button>
+                <div style="text-align: center; margin: 12px 0; color: #718096; font-size: 0.9em;">— OR —</div>
+            </div>
+            
+            <button class="btn-primary" onclick="saveCurrentFieldsAsTemplate()">💾 Save as New Template</button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Overlay -->
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+        <div class="fullscreen-content">
+            <div class="fullscreen-top-bar">
+                <div class="fullscreen-field-info">
+                    <div class="fullscreen-field-label" id="fullscreenFieldLabel">Field Name</div>
+                    <div class="fullscreen-hint" id="fullscreenHint">Extraction hint appears here</div>
+                </div>
+                <div class="fullscreen-actions">
+                    <button class="fullscreen-btn" id="fullscreenEditBtn" onclick="editFromFullscreen()" title="Edit">✏️</button>
+                    <button class="fullscreen-btn" id="fullscreenLockBtn" onclick="toggleFullscreenLock()" title="Lock">🔓</button>
+                    <button class="fullscreen-btn" id="fullscreenDeleteBtn" onclick="deleteFromFullscreen()" title="Delete">🗑️</button>
+                    <button class="fullscreen-close" onclick="closeFullscreen()" title="Exit Fullscreen">×</button>
+                </div>
+            </div>
+            <textarea class="fullscreen-value" id="fullscreenValue" placeholder="No data yet"></textarea>
         </div>
     </div>
 
@@ -149,311 +1488,2681 @@
         <span id="toastMessage">Action completed</span>
     </div>
 
-    <script>
-        // --- 1. CONFIGURATION & STATE ---
-        let currentWsUrl = localStorage.getItem('voice_app_ws_url') || 'wss://voice-assistant-4plp.onrender.com';
-        let socket = null;
-        let audioContext = null;
-        let mediaStream = null;
-        let processor = null;
-        let currentTemplate = [];
-        let fullTranscript = "";
-        let syncTimer = null;
+    <!-- Notes Library Modal -->
+    <div class="modal-overlay" id="notesLibraryModal" onclick="closeNotesLibrary(event)">
+        <div class="modal-content" style="max-width: 900px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📚 My Notes</div>
+                <button class="modal-close" onclick="closeNotesLibrary()">×</button>
+            </div>
+            
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" id="notesSearch" placeholder="🔍 Search notes..." oninput="filterNotes()">
+                <select class="filter-select" id="notesFilter" onchange="filterNotes()">
+                    <option value="all">All Categories</option>
+                    <option value="recent">Recent</option>
+                    <option value="Business">Business</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Student">Student</option>
+                    <option value="Journalism">Journalism</option>
+                    <option value="Planning">Planning</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Uncategorized">Uncategorized</option>
+                </select>
+            </div>
 
-        // --- 2. TEMPLATE LIBRARY (From your new file) ---
+            <div id="notesContainer"></div>
+        </div>
+    </div>
+
+    <!-- Edit Note Name Modal -->
+    <div class="modal-overlay" id="editNoteNameModal" onclick="closeEditNoteNameModal(event)">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">✏️ Edit Note</div>
+                <button class="modal-close" onclick="closeEditNoteNameModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Note Title</label>
+                <input type="text" class="form-input" id="editNoteNameInput" placeholder="Enter note title...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="editNoteCategorySelect" onchange="toggleCustomCategoryInput(this)">
+                    <option value="Business">Business</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Student">Student</option>
+                    <option value="Journalism">Journalism</option>
+                    <option value="Planning">Planning</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Uncategorized">Uncategorized</option>
+                    <option value="__custom__">➕ Create New Category</option>
+                </select>
+                <input type="text" class="form-input" id="editNoteCategoryCustomInput" placeholder="Enter custom category name..." style="display: none; margin-top: 8px;" onkeypress="if(event.key==='Enter') confirmEditNoteName()">
+            </div>
+            <button class="btn-primary" onclick="confirmEditNoteName()">💾 Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Save Note Title Modal -->
+    <div class="modal-overlay" id="saveNoteTitleModal" onclick="closeSaveNoteTitleModal(event)">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">💾 Save Note</div>
+                <button class="modal-close" onclick="closeSaveNoteTitleModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Note Title</label>
+                <input type="text" class="form-input" id="saveNoteTitleInput" placeholder="Enter note title..." value="Untitled Note">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="saveNoteCategorySelect" onchange="toggleSaveCustomCategoryInput(this)">
+                    <option value="Business">Business</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Student">Student</option>
+                    <option value="Journalism">Journalism</option>
+                    <option value="Planning">Planning</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Uncategorized">Uncategorized</option>
+                    <option value="__custom__">➕ Create New Category</option>
+                </select>
+                <input type="text" class="form-input" id="saveNoteCategoryCustomInput" placeholder="Enter custom category name..." style="display: none; margin-top: 8px;" onkeypress="if(event.key==='Enter') confirmSaveNote()">
+            </div>
+            <button class="btn-primary" onclick="confirmSaveNote()">💾 Save</button>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Dialog -->
+    <div class="modal-overlay" id="confirmDialog" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="confirmTitle">⚠️ Confirm Action</div>
+            </div>
+            <div style="margin: 20px 0; font-size: 1em; color: #4a5568;" id="confirmMessage">
+                Are you sure?
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-primary" style="flex: 1;" id="confirmYes">Confirm</button>
+                <button class="btn-primary" style="background: #718096; flex: 1;" id="confirmNo">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CUSTOM CONFIRM DIALOG ==========
+        
+        function customConfirm(message, title = '⚠️ Confirm Action', confirmText = 'Confirm', cancelText = 'Cancel') {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('confirmDialog');
+                const titleEl = document.getElementById('confirmTitle');
+                const messageEl = document.getElementById('confirmMessage');
+                const yesBtn = document.getElementById('confirmYes');
+                const noBtn = document.getElementById('confirmNo');
+                
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                yesBtn.textContent = confirmText;
+                noBtn.textContent = cancelText;
+                dialog.classList.add('active');
+                
+                const handleYes = () => {
+                    dialog.classList.remove('active');
+                    yesBtn.removeEventListener('click', handleYes);
+                    noBtn.removeEventListener('click', handleNo);
+                    resolve(true);
+                };
+                
+                const handleNo = () => {
+                    dialog.classList.remove('active');
+                    yesBtn.removeEventListener('click', handleYes);
+                    noBtn.removeEventListener('click', handleNo);
+                    resolve(false);
+                };
+                
+                yesBtn.addEventListener('click', handleYes);
+                noBtn.addEventListener('click', handleNo);
+            });
+        }
+
+        // ========== TEMPLATE MANAGEMENT SYSTEM ==========
+        
+        // Default Templates
         const DEFAULT_TEMPLATES = [
+            // ========== BUSINESS (3 templates) ==========
             {
-                id: 'franchise-evaluation', name: 'Franchise Evaluation', category: 'Business',
+                id: 'franchise-evaluation',
+                name: 'Franchise Evaluation',
+                description: 'Comprehensive franchise opportunity assessment',
+                category: 'Business',
                 fields: [
                     { name: 'Franchise Name', hint: 'Extract full name of the franchise' },
+                    { name: 'Industry Details', hint: 'Company\'s industry and business model' },
                     { name: 'Investment Level', hint: 'High and Low All-in Range' },
+                    { name: 'Ownership Type', hint: 'Owner vs Semi-Absentee model' },
+                    { name: 'Products & Services', hint: 'What the business provides' },
                     { name: 'Target Customer', hint: 'Demographics and market' },
-                    { name: 'Territory Rights', hint: 'Exclusive territory details' }
+                    { name: 'Training & Support', hint: 'Franchisor training and ongoing support' },
+                    { name: 'Territory Rights', hint: 'Exclusive territory details' },
+                    { name: 'Exit Strategy', hint: 'Resale and transfer options' }
                 ]
             },
             {
-                id: 'sales-call', name: 'Sales Call', category: 'Business',
+                id: 'sales-call',
+                name: 'Sales Call',
+                description: 'Lead qualification and sales notes',
+                category: 'Business',
                 fields: [
                     { name: 'Lead Name', hint: 'Contact person name' },
+                    { name: 'Company', hint: 'Organization name' },
+                    { name: 'Contact Info', hint: 'Phone and email' },
                     { name: 'Pain Points', hint: 'Current challenges and needs' },
                     { name: 'Budget', hint: 'Budget range or constraints' },
-                    { name: 'Next Steps', hint: 'Follow-up actions' }
+                    { name: 'Timeline', hint: 'Decision timeline' },
+                    { name: 'Decision Makers', hint: 'Key stakeholders' },
+                    { name: 'Competition', hint: 'Competing solutions being considered' },
+                    { name: 'Next Steps', hint: 'Follow-up actions' },
+                    { name: 'Follow-up Date', hint: 'Next contact date' }
                 ]
             },
             {
-                id: 'medical-consultation', name: 'Medical Consultation', category: 'Medical',
+                id: 'business-meeting',
+                name: 'Business Meeting',
+                description: 'General business meeting notes and action items',
+                category: 'Business',
+                fields: [
+                    { name: 'Meeting Title', hint: 'Purpose of the meeting' },
+                    { name: 'Attendees', hint: 'Who was present' },
+                    { name: 'Key Decisions', hint: 'Decisions made during meeting' },
+                    { name: 'Action Items', hint: 'Tasks assigned with owners' },
+                    { name: 'Discussion Points', hint: 'Main topics discussed' },
+                    { name: 'Concerns Raised', hint: 'Issues or blockers mentioned' },
+                    { name: 'Next Meeting', hint: 'Date and agenda for follow-up' }
+                ]
+            },
+            
+            // ========== REAL ESTATE (2 templates) ==========
+            {
+                id: 'home-inspection',
+                name: 'Home Inspection',
+                description: 'Detailed property inspection report',
+                category: 'Real Estate',
+                fields: [
+                    { name: 'Property Address', hint: 'Full street address' },
+                    { name: 'Inspection Date', hint: 'Date of inspection' },
+                    { name: 'Inspector Name', hint: 'Certified inspector name' },
+                    { name: 'Exterior Condition', hint: 'Siding, paint, landscaping' },
+                    { name: 'Roof Assessment', hint: 'Roof age, condition, issues' },
+                    { name: 'Foundation', hint: 'Foundation type and condition' },
+                    { name: 'Plumbing', hint: 'Water pressure, leaks, fixtures' },
+                    { name: 'Electrical', hint: 'Panel, wiring, outlets' },
+                    { name: 'HVAC', hint: 'Heating and cooling systems' },
+                    { name: 'Interior Condition', hint: 'Walls, floors, ceilings' }
+                ]
+            },
+            {
+                id: 'property-viewing',
+                name: 'Property Viewing',
+                description: 'Notes from touring a property for sale or rent',
+                category: 'Real Estate',
+                fields: [
+                    { name: 'Property Address', hint: 'Location and address' },
+                    { name: 'Asking Price', hint: 'Listed price' },
+                    { name: 'Square Footage', hint: 'Total living space' },
+                    { name: 'Bedrooms & Bathrooms', hint: 'Number and condition' },
+                    { name: 'First Impressions', hint: 'Curb appeal and initial thoughts' },
+                    { name: 'Pros', hint: 'What you liked about the property' },
+                    { name: 'Cons', hint: 'Issues or concerns' },
+                    { name: 'Neighborhood', hint: 'Area observations and amenities' },
+                    { name: 'Comparable Sales', hint: 'Recent sales in the area' },
+                    { name: 'Interest Level', hint: 'How interested are you (1-10)' }
+                ]
+            },
+            
+            // ========== LEGAL (2 templates) ==========
+            {
+                id: 'legal-client-meeting',
+                name: 'Legal Client Meeting',
+                description: 'Attorney-client consultation notes',
+                category: 'Legal',
+                fields: [
+                    { name: 'Client Name', hint: 'Full legal name' },
+                    { name: 'Case Type', hint: 'Practice area and case category' },
+                    { name: 'Meeting Date', hint: 'Date of consultation' },
+                    { name: 'Key Issues', hint: 'Primary legal concerns' },
+                    { name: 'Background Facts', hint: 'Relevant case background' },
+                    { name: 'Legal Strategy', hint: 'Recommended approach' },
+                    { name: 'Action Items', hint: 'Tasks and deadlines' },
+                    { name: 'Documents Needed', hint: 'Required evidence/paperwork' },
+                    { name: 'Next Steps', hint: 'Follow-up actions' },
+                    { name: 'Follow-up Date', hint: 'Next appointment or deadline' }
+                ]
+            },
+            {
+                id: 'deposition',
+                name: 'Deposition Notes',
+                description: 'Key points from deposition testimony',
+                category: 'Legal',
+                fields: [
+                    { name: 'Deponent Name', hint: 'Person being deposed' },
+                    { name: 'Case Name', hint: 'Legal case title' },
+                    { name: 'Date & Time', hint: 'When deposition occurred' },
+                    { name: 'Key Testimony', hint: 'Important statements made' },
+                    { name: 'Inconsistencies', hint: 'Contradictions or questionable claims' },
+                    { name: 'Evidence Discussed', hint: 'Documents or exhibits referenced' },
+                    { name: 'Credibility Assessment', hint: 'Impression of witness reliability' },
+                    { name: 'Follow-up Questions', hint: 'Areas to explore further' }
+                ]
+            },
+            
+            // ========== MEDICAL (2 templates) ==========
+            {
+                id: 'medical-consultation',
+                name: 'Medical Consultation',
+                description: 'Patient consultation and diagnosis notes',
+                category: 'Medical',
                 fields: [
                     { name: 'Patient Name', hint: 'Full patient name' },
+                    { name: 'Date of Visit', hint: 'Consultation date' },
+                    { name: 'Chief Complaint', hint: 'Primary reason for visit' },
                     { name: 'Symptoms', hint: 'All reported symptoms' },
+                    { name: 'Medical History', hint: 'Relevant past conditions' },
+                    { name: 'Current Medications', hint: 'All current medications' },
                     { name: 'Diagnosis', hint: 'Clinical diagnosis' },
-                    { name: 'Treatment Plan', hint: 'Recommended treatment' }
+                    { name: 'Treatment Plan', hint: 'Recommended treatment' },
+                    { name: 'Prescriptions', hint: 'Medications prescribed' },
+                    { name: 'Follow-up Instructions', hint: 'Next steps and appointments' }
+                ]
+            },
+            {
+                id: 'patient-intake',
+                name: 'Patient Intake',
+                description: 'New patient registration and history',
+                category: 'Medical',
+                fields: [
+                    { name: 'Patient Name', hint: 'Full legal name' },
+                    { name: 'Date of Birth', hint: 'DOB' },
+                    { name: 'Emergency Contact', hint: 'Name and phone number' },
+                    { name: 'Insurance Information', hint: 'Provider and policy number' },
+                    { name: 'Allergies', hint: 'Drug and environmental allergies' },
+                    { name: 'Current Medications', hint: 'All medications and supplements' },
+                    { name: 'Past Surgeries', hint: 'Previous surgical procedures' },
+                    { name: 'Family History', hint: 'Hereditary conditions' },
+                    { name: 'Reason for Visit', hint: 'Why are they here today' }
+                ]
+            },
+            
+            // ========== STUDENT (4 templates) ==========
+            {
+                id: 'lecture-notes-general',
+                name: 'Lecture Notes - General',
+                description: 'General lecture notes for any subject',
+                category: 'Student',
+                fields: [
+                    { name: 'Course Name', hint: 'Class title' },
+                    { name: 'Lecture Date', hint: 'Date of lecture' },
+                    { name: 'Topic', hint: 'Main topic covered' },
+                    { name: 'Key Concepts', hint: 'Important ideas and theories' },
+                    { name: 'Definitions', hint: 'Terms and their meanings' },
+                    { name: 'Examples', hint: 'Examples provided by professor' },
+                    { name: 'Questions', hint: 'Things to clarify or research' },
+                    { name: 'Homework Assigned', hint: 'Assignments given' },
+                    { name: 'Test Info', hint: 'Upcoming exam details' }
+                ]
+            },
+            {
+                id: 'lecture-notes-stem',
+                name: 'Lecture Notes - STEM',
+                description: 'Science, Technology, Engineering, Math lectures',
+                category: 'Student',
+                fields: [
+                    { name: 'Course & Section', hint: 'Course number and section' },
+                    { name: 'Chapter/Unit', hint: 'Textbook reference' },
+                    { name: 'Formulas', hint: 'Important equations' },
+                    { name: 'Theorems', hint: 'Mathematical or scientific principles' },
+                    { name: 'Problem-Solving Methods', hint: 'Techniques demonstrated' },
+                    { name: 'Example Problems', hint: 'Practice problems covered' },
+                    { name: 'Lab Information', hint: 'Upcoming lab details' },
+                    { name: 'Common Mistakes', hint: 'Pitfalls to avoid' }
+                ]
+            },
+            {
+                id: 'lecture-notes-humanities',
+                name: 'Lecture Notes - Humanities',
+                description: 'Literature, History, Philosophy, Arts',
+                category: 'Student',
+                fields: [
+                    { name: 'Course Name', hint: 'Class title' },
+                    { name: 'Reading Assignment', hint: 'Chapters or pages' },
+                    { name: 'Main Arguments', hint: 'Key thesis or arguments' },
+                    { name: 'Historical Context', hint: 'Time period and setting' },
+                    { name: 'Key Figures', hint: 'Important people discussed' },
+                    { name: 'Themes', hint: 'Recurring ideas or motifs' },
+                    { name: 'Critical Analysis', hint: 'Professor\'s interpretation' },
+                    { name: 'Discussion Questions', hint: 'Questions posed in class' },
+                    { name: 'Essay Topics', hint: 'Potential paper topics' }
+                ]
+            },
+            {
+                id: 'study-group',
+                name: 'Study Group Session',
+                description: 'Collaborative study session notes',
+                category: 'Student',
+                fields: [
+                    { name: 'Course Name', hint: 'Which class' },
+                    { name: 'Group Members', hint: 'Who attended' },
+                    { name: 'Topics Covered', hint: 'What was studied' },
+                    { name: 'Difficult Concepts', hint: 'What needs more work' },
+                    { name: 'Practice Problems', hint: 'Problems worked through' },
+                    { name: 'Study Strategies', hint: 'Helpful techniques discovered' },
+                    { name: 'Resources', hint: 'Useful materials found' },
+                    { name: 'Next Session', hint: 'When and what to cover' }
+                ]
+            },
+            
+            // ========== JOURNALISM (3 templates) ==========
+            {
+                id: 'interview-notes',
+                name: 'Interview Notes',
+                description: 'Journalist interview documentation',
+                category: 'Journalism',
+                fields: [
+                    { name: 'Interviewee Name', hint: 'Person being interviewed' },
+                    { name: 'Title/Role', hint: 'Their position or expertise' },
+                    { name: 'Interview Date', hint: 'Date and time' },
+                    { name: 'Story Angle', hint: 'What story are you writing' },
+                    { name: 'Key Quotes', hint: 'Important quotable statements' },
+                    { name: 'Background Information', hint: 'Context about the interviewee' },
+                    { name: 'Facts & Figures', hint: 'Data points mentioned' },
+                    { name: 'Follow-up Questions', hint: 'What to ask next time' },
+                    { name: 'Fact-Check Items', hint: 'Claims to verify' }
+                ]
+            },
+            {
+                id: 'story-research',
+                name: 'Story Research',
+                description: 'Research notes for an article or story',
+                category: 'Journalism',
+                fields: [
+                    { name: 'Story Title', hint: 'Working headline' },
+                    { name: 'Angle', hint: 'Story focus and perspective' },
+                    { name: 'Sources', hint: 'People to interview' },
+                    { name: 'Key Facts', hint: 'Important verified information' },
+                    { name: 'Statistics', hint: 'Relevant data and numbers' },
+                    { name: 'Timeline', hint: 'Sequence of events' },
+                    { name: 'Conflicting Views', hint: 'Different perspectives' },
+                    { name: 'Outstanding Questions', hint: 'What still needs answers' }
+                ]
+            },
+            {
+                id: 'press-conference',
+                name: 'Press Conference',
+                description: 'Live coverage of press conferences',
+                category: 'Journalism',
+                fields: [
+                    { name: 'Event', hint: 'What is being announced' },
+                    { name: 'Speakers', hint: 'Who is speaking' },
+                    { name: 'Key Announcements', hint: 'Main news being shared' },
+                    { name: 'Notable Quotes', hint: 'Quotable statements' },
+                    { name: 'Q&A Highlights', hint: 'Important questions and answers' },
+                    { name: 'Reactions', hint: 'Audience or public response' },
+                    { name: 'Context', hint: 'Background and why this matters' },
+                    { name: 'Next Steps', hint: 'What happens next' }
+                ]
+            },
+            
+            // ========== PLANNING (5 templates) ==========
+            {
+                id: 'grocery-shopping',
+                name: 'Grocery Shopping List',
+                description: 'Organized shopping list by category',
+                category: 'Planning',
+                fields: [
+                    { name: 'Produce', hint: 'Fruits and vegetables' },
+                    { name: 'Proteins', hint: 'Meat, fish, eggs, tofu' },
+                    { name: 'Dairy', hint: 'Milk, cheese, yogurt' },
+                    { name: 'Pantry Staples', hint: 'Rice, pasta, canned goods' },
+                    { name: 'Frozen Items', hint: 'Frozen foods' },
+                    { name: 'Bakery', hint: 'Bread and baked goods' },
+                    { name: 'Household Items', hint: 'Cleaning supplies, paper products' },
+                    { name: 'Special Requests', hint: 'Specific brands or dietary items' }
+                ]
+            },
+            {
+                id: 'vacation-planning',
+                name: 'Vacation Planning',
+                description: 'Trip planning and itinerary notes',
+                category: 'Planning',
+                fields: [
+                    { name: 'Destination', hint: 'Where are you going' },
+                    { name: 'Travel Dates', hint: 'Departure and return dates' },
+                    { name: 'Budget', hint: 'Total budget and breakdown' },
+                    { name: 'Flights', hint: 'Flight details and confirmations' },
+                    { name: 'Accommodations', hint: 'Hotels or rentals booked' },
+                    { name: 'Activities', hint: 'Things to do and see' },
+                    { name: 'Restaurants', hint: 'Places to eat' },
+                    { name: 'Packing List', hint: 'What to bring' },
+                    { name: 'Important Contacts', hint: 'Emergency numbers, hotel info' }
+                ]
+            },
+            {
+                id: 'event-planning',
+                name: 'Event Planning',
+                description: 'Planning any type of event',
+                category: 'Planning',
+                fields: [
+                    { name: 'Event Name', hint: 'What is the event' },
+                    { name: 'Date & Time', hint: 'When is it happening' },
+                    { name: 'Venue', hint: 'Location and address' },
+                    { name: 'Guest List', hint: 'Who is invited' },
+                    { name: 'Budget', hint: 'Total budget and expenses' },
+                    { name: 'Vendors', hint: 'Caterers, photographers, etc.' },
+                    { name: 'To-Do List', hint: 'Tasks that need to be completed' },
+                    { name: 'Timeline', hint: 'Schedule of activities' },
+                    { name: 'Contingency Plans', hint: 'Backup plans for issues' }
+                ]
+            },
+            {
+                id: 'meal-planning',
+                name: 'Weekly Meal Plan',
+                description: 'Weekly meal planning and prep',
+                category: 'Planning',
+                fields: [
+                    { name: 'Monday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Tuesday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Wednesday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Thursday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Friday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Saturday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Sunday', hint: 'Breakfast, lunch, dinner' },
+                    { name: 'Prep Tasks', hint: 'What to prep ahead' },
+                    { name: 'Shopping List', hint: 'Ingredients needed' }
+                ]
+            },
+            {
+                id: 'project-planning',
+                name: 'Project Planning',
+                description: 'Work or personal project planning',
+                category: 'Planning',
+                fields: [
+                    { name: 'Project Name', hint: 'What is the project' },
+                    { name: 'Objective', hint: 'What are you trying to achieve' },
+                    { name: 'Timeline', hint: 'Start and end dates' },
+                    { name: 'Milestones', hint: 'Key checkpoints' },
+                    { name: 'Resources Needed', hint: 'People, tools, budget' },
+                    { name: 'Task Breakdown', hint: 'Specific tasks to complete' },
+                    { name: 'Dependencies', hint: 'What relies on what' },
+                    { name: 'Risks', hint: 'Potential problems' },
+                    { name: 'Success Criteria', hint: 'How will you know it\'s done' }
                 ]
             }
         ];
 
-        // --- 3. UI RENDERING LOGIC ---
-        function initUI() {
-            const select = document.getElementById('templateSelect');
-            select.innerHTML = '<option value="">-- Select Template --</option>';
-            
-            DEFAULT_TEMPLATES.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.text = t.name;
-                select.appendChild(opt);
-            });
+        // Template Storage
+        class TemplateManager {
+            constructor() {
+                this.templates = this.loadTemplates();
+                this.currentTemplate = null;
+                this.library = DEFAULT_TEMPLATES; // Keep library separate
+            }
 
-            // Load default
-            select.addEventListener('change', (e) => loadTemplate(e.target.value));
-            
-            // Settings
-            document.getElementById('settingsBtn').addEventListener('click', () => {
-                const newUrl = prompt("Server URL:", currentWsUrl);
-                if(newUrl) {
-                    currentWsUrl = newUrl;
-                    localStorage.setItem('voice_app_ws_url', newUrl);
+            loadTemplates() {
+                const stored = localStorage.getItem('bingoTemplates');
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        console.error('Failed to load templates:', e);
+                    }
                 }
+                // Start with empty templates - user imports from library
+                return [];
+            }
+
+            saveTemplates() {
+                localStorage.setItem('bingoTemplates', JSON.stringify(this.templates));
+            }
+
+            addTemplate(template) {
+                const id = template.id || this.generateId(template.name);
+                const newTemplate = {
+                    ...template,
+                    id,
+                    createdAt: new Date().toISOString()
+                };
+                this.templates.push(newTemplate);
+                this.saveTemplates();
+                return newTemplate;
+            }
+
+            updateTemplate(id, updates) {
+                const index = this.templates.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    this.templates[index] = { ...this.templates[index], ...updates };
+                    this.saveTemplates();
+                    return this.templates[index];
+                }
+                return null;
+            }
+
+            deleteTemplate(id) {
+                this.templates = this.templates.filter(t => t.id !== id);
+                this.saveTemplates();
+                return true;
+            }
+
+            getTemplate(id) {
+                return this.templates.find(t => t.id === id);
+            }
+
+            exportTemplate(id) {
+                const template = this.getTemplate(id);
+                if (!template) return null;
+                
+                const exportData = {
+                    ...template,
+                    exportedAt: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bingo-template-${template.id}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('✓', 'Template exported!');
+            }
+
+            importTemplate(jsonData) {
+                try {
+                    const template = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+                    
+                    // Validate template structure
+                    if (!template.name || !template.fields || !Array.isArray(template.fields)) {
+                        throw new Error('Invalid template format');
+                    }
+                    
+                    // Generate new ID to avoid conflicts
+                    delete template.id;
+                    delete template.isDefault;
+                    
+                    const newTemplate = this.addTemplate(template);
+                    showToast('✓', 'Template imported successfully!');
+                    return newTemplate;
+                } catch (e) {
+                    showToast('❌', 'Failed to import template: ' + e.message);
+                    return null;
+                }
+            }
+
+            generateId(name) {
+                return name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
+            }
+        }
+
+        // Initialize Template Manager
+        const templateManager = new TemplateManager();
+
+        // ========== UI FUNCTIONS ==========
+
+        // Populate template selector
+        function populateTemplateSelector() {
+            const select = document.getElementById('templateSelect');
+            select.innerHTML = '<option value="">Select a template...</option>';
+            
+            const categories = {};
+            templateManager.templates.forEach(t => {
+                if (!categories[t.category]) categories[t.category] = [];
+                categories[t.category].push(t);
+            });
+            
+            Object.keys(categories).sort().forEach(category => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                categories[category].forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.id;
+                    option.textContent = template.name + (template.isDefault ? ' ★' : '');
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
             });
         }
 
-        function loadTemplate(id) {
-            const template = DEFAULT_TEMPLATES.find(t => t.id === id);
+        // Load template into field grid
+        function loadTemplate() {
+            const select = document.getElementById('templateSelect');
+            const templateId = select.value;
+            
+            if (!templateId) return;
+            
+            const template = templateManager.getTemplate(templateId);
             if (!template) return;
             
-            currentTemplate = template.fields.map(f => ({
-                id: f.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-                name: f.name,
-                hint: f.hint,
-                value: ''
-            }));
-
-            renderGrid();
-            syncFieldsToServer(); // Tell server about new fields
+            templateManager.currentTemplate = template;
+            
+            // Clear current fields
+            const grid = document.getElementById('fieldGrid');
+            grid.innerHTML = '';
+            
+            // Create field cards from template
+            template.fields.forEach((field, index) => {
+                createFieldCard(field.name, field.hint);
+            });
+            
+            // Reset toggle button to match current state (fields are expanded by default)
+            resetToggleButton();
+            
             showToast('✓', `Loaded: ${template.name}`);
         }
 
-        function renderGrid() {
-            const grid = document.getElementById('fieldGrid');
-            grid.innerHTML = '';
-
-            currentTemplate.forEach(field => {
-                const card = document.createElement('div');
-                card.className = 'field-card';
-                card.id = `card-${field.id}`; // For easy updates
-                
-                card.innerHTML = `
-                    <div class="field-header">
-                        <div class="field-info">
-                            <div class="field-name">${field.name}</div>
-                            <div class="field-hint">${field.hint}</div>
-                        </div>
+        // Create field card
+        function createFieldCard(name, hint, value = '') {
+            const card = document.createElement('div');
+            card.className = 'field-card';
+            card.innerHTML = `
+                <div class="field-header" onclick="toggleCollapse(this.parentElement)">
+                    <div class="field-info">
+                        <div class="field-name">${name}</div>
+                        <div class="field-hint">${hint}</div>
                     </div>
-                    <div class="field-content">
-                        <textarea class="field-value" id="input-${field.id}" 
-                            oninput="handleInput('${field.id}', this.value)">${field.value}</textarea>
+                    <div class="field-actions-column" onclick="event.stopPropagation()">
+                        <div class="field-actions">
+                            <button class="icon-btn drag-handle" title="Drag to reorder">⋮⋮</button>
+                            <button class="icon-btn" onclick="editField(this)" title="Edit">✏️</button>
+                            <button class="icon-btn" onclick="openFullscreen(this)" title="Fullscreen">⛶</button>
+                            <button class="icon-btn lock" onclick="toggleLock(this)">🔓</button>
+                            <button class="icon-btn delete" onclick="deleteCard(this)">🗑️</button>
+                        </div>
+                        <span class="field-status-badge ${value ? 'has-content-indicator' : 'empty-indicator'}">
+                            ${value ? '✓ Has Data' : '⚠ Empty'}
+                        </span>
+                    </div>
+                </div>
+                <div class="field-content">
+                    <textarea class="field-value" placeholder="Waiting for data..." onclick="event.stopPropagation()">${value}</textarea>
+                </div>
+            `;
+            
+            document.getElementById('fieldGrid').appendChild(card);
+            
+            // Initialize drag and drop for this card
+            initializeDragAndDrop(card);
+            
+            // Auto-resize textarea
+            const textarea = card.querySelector('.field-value');
+            setTimeout(() => autoResizeTextarea(textarea), 10);
+        }
+
+        // Open template manager
+        function openTemplateManager() {
+            switchTab('myTemplates');
+            document.getElementById('templateManagerModal').classList.add('active');
+        }
+
+        function closeTemplateManager(event) {
+            if (!event || event.target.id === 'templateManagerModal') {
+                document.getElementById('templateManagerModal').classList.remove('active');
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            if (tabName === 'myTemplates') {
+                document.getElementById('myTemplatesTab').classList.add('active');
+                document.getElementById('libraryTab').classList.remove('active');
+                document.getElementById('myTemplatesView').style.display = 'block';
+                document.getElementById('libraryView').style.display = 'none';
+                renderMyTemplates();
+            } else {
+                document.getElementById('myTemplatesTab').classList.remove('active');
+                document.getElementById('libraryTab').classList.add('active');
+                document.getElementById('myTemplatesView').style.display = 'none';
+                document.getElementById('libraryView').style.display = 'block';
+                renderLibraryTemplates();
+            }
+        }
+
+        // Render user's templates
+        function renderMyTemplates() {
+            const container = document.getElementById('myTemplatesView');
+            container.innerHTML = '';
+            
+            document.getElementById('myTemplatesCount').textContent = templateManager.templates.length;
+            
+            if (templateManager.templates.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #a0aec0;">
+                        <div style="font-size: 3em; margin-bottom: 16px;">📋</div>
+                        <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px;">No templates yet</div>
+                        <div style="font-size: 0.9em;">Import from the Template Library or create your own</div>
                     </div>
                 `;
-                grid.appendChild(card);
+                return;
+            }
+            
+            const categories = {};
+            templateManager.templates.forEach(t => {
+                if (!categories[t.category]) categories[t.category] = [];
+                categories[t.category].push(t);
+            });
+            
+            Object.keys(categories).sort().forEach(category => {
+                const categoryHeader = document.createElement('h3');
+                categoryHeader.style.cssText = 'font-size: 0.9em; color: #718096; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 1px;';
+                categoryHeader.textContent = category;
+                container.appendChild(categoryHeader);
+                
+                categories[category].forEach(template => {
+                    const item = document.createElement('div');
+                    item.className = 'template-item';
+                    item.innerHTML = `
+                        <div class="template-item-header">
+                            <div class="template-item-name">${template.name}</div>
+                        </div>
+                        <div class="template-item-desc">${template.description}</div>
+                        <div class="template-item-meta">
+                            <span>📋 ${template.fields.length} fields</span>
+                            <span>📁 ${template.category}</span>
+                        </div>
+                        <div class="template-item-actions">
+                            <button class="template-item-btn" onclick="useTemplate('${template.id.replace(/'/g, "\\'")}')">✓ Use</button>
+                            <button class="template-item-btn" onclick="editTemplate('${template.id.replace(/'/g, "\\'")}')">✏️ Edit</button>
+                            <button class="template-item-btn" onclick="templateManager.exportTemplate('${template.id.replace(/'/g, "\\'")}')">📥 Export</button>
+                            <button class="template-item-btn danger" onclick="deleteTemplate('${template.id.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
             });
         }
 
-        function handleInput(id, value) {
-            const field = currentTemplate.find(f => f.id === id);
-            if (field) field.value = value;
+        // Render library templates
+        function renderLibraryTemplates() {
+            document.getElementById('libraryCount').textContent = templateManager.library.length;
+            showCategoryGrid();
+        }
+        
+        // Show category grid
+        function showCategoryGrid() {
+            document.getElementById('categoryGrid').style.display = 'grid';
+            document.getElementById('libraryTemplateList').style.display = 'none';
             
-            // Debounced Sync
-            clearTimeout(syncTimer);
-            syncTimer = setTimeout(syncFieldsToServer, 2000);
+            const container = document.getElementById('categoryGrid');
+            container.innerHTML = '';
+            
+            // Count templates per category
+            const categoryCounts = {};
+            templateManager.library.forEach(t => {
+                categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
+            });
+            
+            // Define categories with icons and styles
+            const categories = [
+                { name: 'Business', icon: '🏢', class: 'business' },
+                { name: 'Real Estate', icon: '🏠', class: 'real-estate' },
+                { name: 'Legal', icon: '⚖️', class: 'legal' },
+                { name: 'Medical', icon: '🏥', class: 'medical' },
+                { name: 'Student', icon: '🎓', class: 'student' },
+                { name: 'Journalism', icon: '📰', class: 'journalism' },
+                { name: 'Planning', icon: '📋', class: 'planning' }
+            ];
+            
+            categories.forEach(category => {
+                const count = categoryCounts[category.name] || 0;
+                if (count === 0) return; // Skip empty categories
+                
+                const card = document.createElement('div');
+                card.className = `category-card ${category.class}`;
+                card.onclick = () => showCategoryTemplates(category.name);
+                card.innerHTML = `
+                    <div class="category-icon">${category.icon}</div>
+                    <div class="category-name">${category.name}</div>
+                    <div class="category-count">${count} template${count !== 1 ? 's' : ''}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // Show templates for selected category
+        function showCategoryTemplates(categoryName) {
+            document.getElementById('categoryGrid').style.display = 'none';
+            document.getElementById('libraryTemplateList').style.display = 'block';
+            
+            const container = document.getElementById('libraryTemplateCards');
+            container.innerHTML = '';
+            
+            const templates = templateManager.library.filter(t => t.category === categoryName);
+            
+            templates.forEach(template => {
+                container.appendChild(createLibraryTemplateCard(template));
+            });
+        }
+        
+        // Create library template card
+        function createLibraryTemplateCard(template) {
+            // Check if already imported
+            const isImported = templateManager.templates.some(t => 
+                t.name === template.name && t.category === template.category
+            );
+            
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.innerHTML = `
+                <div class="template-item-header">
+                    <div class="template-item-name">${template.name}</div>
+                    ${isImported ? '<div class="template-item-badge" style="background: #48bb78;">IMPORTED</div>' : ''}
+                </div>
+                <div class="template-item-desc">${template.description}</div>
+                <div class="template-item-meta">
+                    <span>📋 ${template.fields.length} fields</span>
+                    <span>📁 ${template.category}</span>
+                </div>
+                <div class="template-item-actions">
+                    ${isImported 
+                        ? `<button class="template-item-btn" onclick="importFromLibrary('${template.id.replace(/'/g, "\\'")}', true)" style="background: #48bb78; color: white;">✓ Import Again</button>`
+                        : `<button class="template-item-btn" onclick="importFromLibrary('${template.id.replace(/'/g, "\\'")}', false)" style="background: #667eea; color: white;">📥 Import</button>`
+                    }
+                </div>
+            `;
+            return item;
         }
 
-        // --- 4. WEBSOCKET ENGINE (The Missing Piece) ---
-        async function startListening() {
-            if (!currentWsUrl) return alert("No Server URL configured");
+        // Import template from library
+        function importFromLibrary(libraryId, isReimport) {
+            const libraryTemplate = templateManager.library.find(t => t.id === libraryId);
+            if (!libraryTemplate) {
+                showToast('❌', 'Template not found in library');
+                return;
+            }
             
-            try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: { echoCancellation: true, noiseSuppression: true } 
+            // Check for duplicate names and auto-increment
+            let newName = libraryTemplate.name;
+            const existingNames = templateManager.templates.map(t => t.name.toLowerCase());
+            
+            if (existingNames.includes(newName.toLowerCase())) {
+                // Find the next available number
+                let counter = 2;
+                while (existingNames.includes(`${newName} ${counter}`.toLowerCase())) {
+                    counter++;
+                }
+                newName = `${newName} ${counter}`;
+            }
+            
+            // Create a copy without the original ID (so it gets a new one)
+            const templateCopy = {
+                name: newName,
+                description: libraryTemplate.description,
+                category: libraryTemplate.category,
+                fields: [...libraryTemplate.fields]
+            };
+            
+            templateManager.addTemplate(templateCopy);
+            populateTemplateSelector();
+            
+            showToast('✓', `"${newName}" imported!`);
+            
+            // Switch to My Templates tab to show the imported template
+            switchTab('myTemplates');
+        }
+
+        function useTemplate(id) {
+            document.getElementById('templateSelect').value = id;
+            loadTemplate();
+            closeTemplateManager();
+        }
+
+        async function deleteTemplate(id) {
+            // Get the template name to show in confirmation
+            const template = templateManager.getTemplate(id);
+            const templateName = template ? template.name : 'this template';
+            
+            const userConfirmed = await customConfirm(
+                `Delete "${templateName}"? This cannot be undone.`,
+                '🗑️ Delete Template',
+                'Delete',
+                'Cancel'
+            );
+            
+            if (userConfirmed) {
+                if (templateManager.deleteTemplate(id)) {
+                    renderMyTemplates();
+                    populateTemplateSelector();
+                    showToast('✓', 'Template deleted');
+                }
+            }
+        }
+
+        // Template Editor
+        let editingTemplateId = null;
+        let templateFields = [];
+
+        function openCreateTemplate() {
+            editingTemplateId = null;
+            templateFields = [];
+            document.getElementById('templateEditorTitle').textContent = '➕ Create Template';
+            document.getElementById('templateNameInput').value = '';
+            document.getElementById('templateDescInput').value = '';
+            document.getElementById('templateCategoryInput').value = '';
+            renderFieldBuilder();
+            document.getElementById('templateEditorModal').classList.add('active');
+        }
+
+        // ========== SAVE CURRENT FIELDS AS TEMPLATE ==========
+
+        function openSaveAsTemplate() {
+            // Check if there are any fields to save
+            const fieldCards = document.querySelectorAll('.field-card');
+            if (fieldCards.length === 0) {
+                showToast('⚠️', 'No fields to save. Add fields first.');
+                return;
+            }
+
+            // Check if a template is currently loaded
+            const currentTemplate = templateManager.currentTemplate;
+            console.log('Current template:', currentTemplate);
+            
+            if (currentTemplate) {
+                console.log('Template name:', currentTemplate.name);
+                
+                // Show current template info
+                document.getElementById('currentTemplateInfo').style.display = 'block';
+                document.getElementById('currentTemplateName').textContent = currentTemplate.name;
+                
+                // Show update button for all templates (all are now editable)
+                document.getElementById('updateCurrentTemplateBtn').style.display = 'block';
+                document.getElementById('updateBtnTemplateName').textContent = currentTemplate.name;
+                
+                // Pre-fill form with current template info
+                document.getElementById('saveTemplateName').value = currentTemplate.name + ' (Copy)';
+                document.getElementById('saveTemplateDesc').value = currentTemplate.description;
+                document.getElementById('saveTemplateCategory').value = currentTemplate.category;
+            } else {
+                console.log('No current template loaded');
+                
+                // No template loaded - hide update button
+                document.getElementById('currentTemplateInfo').style.display = 'none';
+                document.getElementById('updateCurrentTemplateBtn').style.display = 'none';
+                
+                // Clear form
+                document.getElementById('saveTemplateName').value = '';
+                document.getElementById('saveTemplateDesc').value = '';
+                document.getElementById('saveTemplateCategory').value = '';
+            }
+            
+            document.getElementById('saveAsTemplateModal').classList.add('active');
+        }
+
+        function closeSaveAsTemplate(event) {
+            if (!event || event.target.id === 'saveAsTemplateModal') {
+                document.getElementById('saveAsTemplateModal').classList.remove('active');
+            }
+        }
+
+        function getCurrentFields() {
+            const fieldCards = document.querySelectorAll('.field-card');
+            const fields = [];
+            
+            fieldCards.forEach(card => {
+                const nameEl = card.querySelector('.field-name');
+                const hintEl = card.querySelector('.field-hint');
+                
+                if (nameEl) {
+                    const name = nameEl.textContent.trim()
+                        .split('\n')[0]
+                        .replace('✓ Has Data', '')
+                        .replace('⚠ Empty', '')
+                        .trim();
+                    const hint = hintEl ? hintEl.textContent.trim() : '';
+                    
+                    fields.push({ name, hint });
+                }
+            });
+            
+            return fields;
+        }
+
+        async function updateCurrentTemplate() {
+            const currentTemplate = templateManager.currentTemplate;
+            
+            if (!currentTemplate) {
+                showToast('❌', 'No template loaded');
+                return;
+            }
+            
+            // Confirm update
+            const confirmed = await customConfirm(
+                `Update "${currentTemplate.name}" with current fields?`,
+                '🔄 Update Template',
+                'Update',
+                'Cancel'
+            );
+            
+            if (!confirmed) return;
+            
+            const fields = getCurrentFields();
+            
+            if (fields.length === 0) {
+                showToast('⚠️', 'No fields to save');
+                return;
+            }
+            
+            // Update template with new fields
+            templateManager.updateTemplate(currentTemplate.id, { fields });
+            populateTemplateSelector();
+            closeSaveAsTemplate();
+            showToast('✓', `"${currentTemplate.name}" updated!`);
+        }
+
+        function saveCurrentFieldsAsTemplate() {
+            const name = document.getElementById('saveTemplateName').value.trim();
+            const description = document.getElementById('saveTemplateDesc').value.trim();
+            const category = document.getElementById('saveTemplateCategory').value.trim();
+            
+            if (!name) {
+                showToast('⚠️', 'Please enter a template name');
+                return;
+            }
+            
+            const fields = getCurrentFields();
+            
+            if (fields.length === 0) {
+                showToast('⚠️', 'No fields to save');
+                return;
+            }
+            
+            const templateData = {
+                name,
+                description: description || 'Custom template',
+                category: category || 'Custom',
+                fields
+            };
+            
+            templateManager.addTemplate(templateData);
+            populateTemplateSelector();
+            closeSaveAsTemplate();
+            showToast('✓', `Template "${name}" saved!`);
+        }
+
+        // ========== END SAVE AS TEMPLATE ==========
+
+        function editTemplate(id) {
+            const template = templateManager.getTemplate(id);
+            if (!template) return;
+            
+            editingTemplateId = id;
+            templateFields = [...template.fields];
+            
+            document.getElementById('templateEditorTitle').textContent = '✏️ Edit Template';
+            document.getElementById('templateNameInput').value = template.name;
+            document.getElementById('templateDescInput').value = template.description;
+            document.getElementById('templateCategoryInput').value = template.category;
+            
+            renderFieldBuilder();
+            
+            closeTemplateManager();
+            document.getElementById('templateEditorModal').classList.add('active');
+        }
+
+        function closeTemplateEditor(event) {
+            if (!event || event.target.id === 'templateEditorModal') {
+                document.getElementById('templateEditorModal').classList.remove('active');
+            }
+        }
+
+        function addTemplateField() {
+            templateFields.push({ name: '', hint: '' });
+            renderFieldBuilder();
+        }
+
+        function removeTemplateField(index) {
+            templateFields.splice(index, 1);
+            renderFieldBuilder();
+        }
+
+        function renderFieldBuilder() {
+            const container = document.getElementById('fieldBuilder');
+            const fieldsHtml = templateFields.map((field, index) => `
+                <div class="field-builder-item" data-index="${index}">
+                    <div class="field-builder-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="icon-btn template-drag-handle" title="Drag to reorder">⋮⋮</button>
+                            <strong>Field ${index + 1}</strong>
+                        </div>
+                        <button class="icon-btn delete" onclick="removeTemplateField(${index})">🗑️</button>
+                    </div>
+                    <div class="field-builder-inputs">
+                        <input type="text" class="form-input" placeholder="Field name" 
+                               value="${field.name}" 
+                               onchange="templateFields[${index}].name = this.value">
+                        <input type="text" class="form-input" placeholder="Extraction hint" 
+                               value="${field.hint}" 
+                               onchange="templateFields[${index}].hint = this.value">
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `
+                <label class="form-label">Fields</label>
+                ${fieldsHtml}
+            `;
+            
+            // Initialize drag and drop for template fields
+            container.querySelectorAll('.field-builder-item').forEach(item => {
+                initializeTemplateDragAndDrop(item);
+            });
+        }
+
+        function saveTemplate() {
+            const name = document.getElementById('templateNameInput').value.trim();
+            const description = document.getElementById('templateDescInput').value.trim();
+            const category = document.getElementById('templateCategoryInput').value.trim();
+            
+            if (!name) {
+                showToast('⚠️', 'Please enter a template name');
+                return;
+            }
+            
+            if (templateFields.length === 0) {
+                showToast('⚠️', 'Please add at least one field');
+                return;
+            }
+            
+            const validFields = templateFields.filter(f => f.name.trim());
+            if (validFields.length === 0) {
+                showToast('⚠️', 'Please enter field names');
+                return;
+            }
+            
+            const templateData = {
+                name,
+                description: description || 'Custom template',
+                category: category || 'Custom',
+                fields: validFields
+            };
+            
+            if (editingTemplateId) {
+                templateManager.updateTemplate(editingTemplateId, templateData);
+                showToast('✓', 'Template updated!');
+            } else {
+                templateManager.addTemplate(templateData);
+                showToast('✓', 'Template created!');
+            }
+            
+            populateTemplateSelector();
+            closeTemplateEditor();
+        }
+
+        function importTemplate() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const imported = templateManager.importTemplate(event.target.result);
+                    if (imported) {
+                        populateTemplateSelector();
+                        renderMyTemplates();
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // ========== FIELD MANAGEMENT ==========
+
+        let currentEditCard = null;
+        let currentFullscreenCard = null;
+
+        function openAddFieldModal() {
+            document.getElementById('addFieldModal').classList.add('active');
+            document.getElementById('fieldNameInput').focus();
+        }
+
+        function closeAddFieldModal(event) {
+            if (!event || event.target.id === 'addFieldModal') {
+                document.getElementById('addFieldModal').classList.remove('active');
+            }
+        }
+
+        function addField() {
+            const name = document.getElementById('fieldNameInput').value.trim();
+            const hint = document.getElementById('fieldHintInput').value.trim();
+            
+            if (!name) {
+                showToast('⚠️', 'Please enter a field name');
+                return;
+            }
+            
+            createFieldCard(name, hint || 'Add extraction hint');
+            
+            document.getElementById('fieldNameInput').value = '';
+            document.getElementById('fieldHintInput').value = '';
+            closeAddFieldModal();
+        }
+
+        function editField(btn) {
+            const card = btn.closest('.field-card');
+            currentEditCard = card;
+            
+            const nameEl = card.querySelector('.field-name');
+            const hintEl = card.querySelector('.field-hint');
+            
+            const nameText = nameEl.textContent.trim().split('\n')[0].replace('✓ Has Data', '').replace('⚠ Empty', '').trim();
+            const hintText = hintEl.textContent.trim();
+            
+            document.getElementById('editFieldNameInput').value = nameText;
+            document.getElementById('editFieldHintInput').value = hintText;
+            document.getElementById('editFieldModal').classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('editFieldNameInput').focus();
+            }, 100);
+        }
+
+        function closeEditFieldModal(event) {
+            if (!event || event.target.id === 'editFieldModal') {
+                document.getElementById('editFieldModal').classList.remove('active');
+                currentEditCard = null;
+            }
+        }
+
+        function saveFieldEdit() {
+            if (!currentEditCard) return;
+            
+            const newName = document.getElementById('editFieldNameInput').value.trim();
+            const newHint = document.getElementById('editFieldHintInput').value.trim();
+            
+            if (!newName) {
+                showToast('⚠️', 'Field name cannot be empty');
+                return;
+            }
+            
+            const nameEl = currentEditCard.querySelector('.field-name');
+            const hintEl = currentEditCard.querySelector('.field-hint');
+            
+            const badge = nameEl.querySelector('.empty-indicator, .has-content-indicator');
+            nameEl.textContent = newName + ' ';
+            if (badge) nameEl.appendChild(badge);
+            
+            hintEl.textContent = newHint;
+            
+            closeEditFieldModal();
+        }
+
+        async function deleteCard(btn) {
+            const card = btn.closest('.field-card');
+            const fieldName = card.querySelector('.field-name').textContent.trim();
+            
+            const confirmed = await customConfirm(
+                `Delete "${fieldName}"? This cannot be undone.`,
+                '🗑️ Delete Field',
+                'Delete',
+                'Cancel'
+            );
+            
+            if (confirmed) {
+                card.remove();
+                showToast('✓', 'Field deleted');
+            }
+        }
+
+        function toggleLock(btn) {
+            const card = btn.closest('.field-card');
+            const isLocked = card.classList.toggle('locked');
+            btn.textContent = isLocked ? '🔒' : '🔓';
+        }
+
+        function toggleCollapse(card) {
+            const wasCollapsed = card.classList.contains('collapsed');
+            card.classList.toggle('collapsed');
+            
+            if (wasCollapsed) {
+                setTimeout(() => {
+                    const textarea = card.querySelector('.field-value');
+                    if (textarea) autoResizeTextarea(textarea);
+                }, 10);
+            }
+        }
+
+        function toggleExpandCollapse() {
+            const btn = document.getElementById('toggleExpandBtn');
+            const allCollapsed = document.querySelectorAll('.field-card.collapsed').length === document.querySelectorAll('.field-card').length;
+            
+            if (allCollapsed) {
+                // Expand all
+                expandAll();
+                btn.innerHTML = '▶ Collapse All';
+            } else {
+                // Collapse all
+                collapseAll();
+                btn.innerHTML = '▼ Expand All';
+            }
+        }
+
+        function resetToggleButton() {
+            const btn = document.getElementById('toggleExpandBtn');
+            const fieldCards = document.querySelectorAll('.field-card');
+            
+            if (fieldCards.length === 0) {
+                btn.innerHTML = '▼ Expand All';
+                return;
+            }
+            
+            const allCollapsed = document.querySelectorAll('.field-card.collapsed').length === fieldCards.length;
+            
+            if (allCollapsed) {
+                btn.innerHTML = '▼ Expand All';
+            } else {
+                btn.innerHTML = '▶ Collapse All';
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.field-card.collapsed').forEach(card => {
+                card.classList.remove('collapsed');
+                const textarea = card.querySelector('.field-value');
+                if (textarea) {
+                    setTimeout(() => autoResizeTextarea(textarea), 10);
+                }
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.field-card:not(.collapsed)').forEach(card => {
+                card.classList.add('collapsed');
+            });
+        }
+
+        async function clearAllFields() {
+            const confirmed = await customConfirm(
+                'Clear all field data? This cannot be undone.',
+                '🗑️ Clear All Fields',
+                'Clear All',
+                'Cancel'
+            );
+            
+            if (confirmed) {
+                document.querySelectorAll('.field-value').forEach(textarea => {
+                    textarea.value = '';
+                    autoResizeTextarea(textarea);
+                    updateDataIndicator(textarea.closest('.field-card'));
                 });
-
-                socket = new WebSocket(currentWsUrl);
-                
-                socket.onopen = () => {
-                    console.log('WS Connected');
-                    updateStatus('listening');
-                    syncFieldsToServer(); // Send template immediately on connect
-                    
-                    // Audio Pipeline
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const source = audioContext.createMediaStreamSource(mediaStream);
-                    processor = audioContext.createScriptProcessor(4096, 1, 1);
-                    
-                    processor.onaudioprocess = (e) => {
-                        if (socket.readyState === WebSocket.OPEN) {
-                            const inputData = e.inputBuffer.getChannelData(0);
-                            const downsampled = downsampleBuffer(inputData, audioContext.sampleRate, 16000);
-                            socket.send(convertFloat32ToPCM16(downsampled));
-                        }
-                    };
-                    
-                    source.connect(processor);
-                    processor.connect(audioContext.destination);
-                };
-
-                socket.onmessage = (event) => {
-                    try {
-                        const msg = JSON.parse(event.data);
-                        if (msg.type === 'transcript') {
-                            document.getElementById('transcriptText').textContent = msg.text;
-                            fullTranscript += msg.text + " ";
-                        } else if (msg.type === 'templateUpdate') {
-                            applyServerUpdates(msg.data);
-                        } else if (msg.type === 'status') {
-                            updateStatus(msg.active ? 'analyzing' : 'listening');
-                        }
-                    } catch (e) { console.error(e); }
-                };
-
-                socket.onclose = () => updateStatus('ready');
-                
-            } catch (err) {
-                alert("Microphone Error: " + err.message);
-                updateStatus('ready');
+                showToast('✓', 'All fields cleared');
             }
         }
 
-        function stopListening() {
-            if (processor) { processor.disconnect(); processor = null; }
-            if (audioContext) { audioContext.close(); audioContext = null; }
-            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-            if (socket) { socket.close(); socket = null; }
-            updateStatus('ready');
+        // ========== DRAG AND DROP FOR FIELD REORDERING ==========
+
+        let draggedCard = null;
+        let autoScrollInterval = null;
+
+        function initializeDragAndDrop(card) {
+            const dragHandle = card.querySelector('.drag-handle');
+            
+            // Simple approach: make card draggable when handle is pressed
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                card.draggable = true;
+            });
+            
+            dragHandle.addEventListener('mouseup', (e) => {
+                card.draggable = false;
+            });
+
+            // Drag event listeners
+            card.addEventListener('dragstart', (e) => {
+                draggedCard = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+                
+                // Start auto-scroll monitoring
+                startAutoScroll();
+            });
+
+            card.addEventListener('dragend', (e) => {
+                card.classList.remove('dragging');
+                card.draggable = false;
+                
+                // Stop auto-scroll
+                stopAutoScroll();
+                
+                // Clean up all drag-over classes
+                document.querySelectorAll('.field-card').forEach(c => {
+                    c.classList.remove('drag-over');
+                });
+                
+                draggedCard = null;
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault(); // CRITICAL - allows drop
+                
+                if (card === draggedCard) return;
+                
+                // Update auto-scroll based on mouse position
+                updateAutoScroll(e.clientY);
+                
+                // LIVE REORDERING - move the card as we drag over
+                const grid = document.getElementById('fieldGrid');
+                const allCards = Array.from(grid.querySelectorAll('.field-card'));
+                const draggedIndex = allCards.indexOf(draggedCard);
+                const targetIndex = allCards.indexOf(card);
+                
+                if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+                    // Get mouse position relative to card
+                    const rect = card.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    
+                    if (e.clientY < midpoint) {
+                        // Mouse in top half - insert before
+                        card.parentNode.insertBefore(draggedCard, card);
+                    } else {
+                        // Mouse in bottom half - insert after
+                        card.parentNode.insertBefore(draggedCard, card.nextSibling);
+                    }
+                }
+                
+                e.dataTransfer.dropEffect = 'move';
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Card is already in position from live reordering
+                showToast('✓', 'Field reordered');
+            });
         }
 
-        function syncFieldsToServer() {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                const userNotes = document.getElementById('userNotesInput').value;
-                
-                // Format matches what server.js expects
-                const payload = {
-                    type: 'contextUpdate',
-                    fields: currentTemplate.map(f => ({
-                        id: f.id,
-                        name: f.name,
-                        hint: f.hint,
-                        currentValue: f.value
-                    })),
-                    userNotes: userNotes
-                };
-                socket.send(JSON.stringify(payload));
+        // Auto-scroll functionality
+        let scrollSpeed = 0;
+
+        function startAutoScroll() {
+            if (autoScrollInterval) return;
+            
+            autoScrollInterval = setInterval(() => {
+                if (scrollSpeed !== 0) {
+                    window.scrollBy(0, scrollSpeed);
+                }
+            }, 16); // ~60fps
+        }
+
+        function stopAutoScroll() {
+            if (autoScrollInterval) {
+                clearInterval(autoScrollInterval);
+                autoScrollInterval = null;
+            }
+            scrollSpeed = 0;
+        }
+
+        function updateAutoScroll(mouseY) {
+            const scrollThreshold = 100; // pixels from edge to trigger scroll
+            const maxScrollSpeed = 15; // max pixels per frame
+            
+            // Get the header height to know where content area starts
+            const header = document.querySelector('.bento-header');
+            const headerHeight = header ? header.offsetHeight : 0;
+            
+            const windowHeight = window.innerHeight;
+            const contentAreaTop = headerHeight;
+            
+            // Calculate position relative to content area
+            if (mouseY < contentAreaTop + scrollThreshold) {
+                // Near top of content area - scroll up
+                const distance = (contentAreaTop + scrollThreshold) - mouseY;
+                scrollSpeed = -Math.min(maxScrollSpeed, distance / 10);
+            } else if (mouseY > windowHeight - scrollThreshold) {
+                // Near bottom - scroll down
+                const distance = mouseY - (windowHeight - scrollThreshold);
+                scrollSpeed = Math.min(maxScrollSpeed, distance / 10);
+            } else {
+                // In middle - no scroll
+                scrollSpeed = 0;
             }
         }
 
-        function applyServerUpdates(data) {
-            Object.keys(data).forEach(fieldId => {
-                const field = currentTemplate.find(f => f.id === fieldId);
-                if (field) {
-                    field.value = data[fieldId];
-                    const input = document.getElementById(`input-${fieldId}`);
-                    const card = document.getElementById(`card-${fieldId}`);
+        // ========== TEMPLATE FIELD DRAG AND DROP ==========
+
+        let draggedTemplateItem = null;
+
+        function initializeTemplateDragAndDrop(item) {
+            const dragHandle = item.querySelector('.template-drag-handle');
+            
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                item.draggable = true;
+            });
+            
+            dragHandle.addEventListener('mouseup', (e) => {
+                item.draggable = false;
+            });
+
+            item.addEventListener('dragstart', (e) => {
+                draggedTemplateItem = item;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+            });
+
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+                item.draggable = false;
+                
+                // Update templateFields array based on new DOM order
+                const container = document.getElementById('fieldBuilder');
+                const items = Array.from(container.querySelectorAll('.field-builder-item'));
+                const newOrder = items.map(item => {
+                    const oldIndex = parseInt(item.dataset.index);
+                    return templateFields[oldIndex];
+                });
+                templateFields = newOrder;
+                
+                // Re-render to update field numbers and indices
+                renderFieldBuilder();
+                
+                draggedTemplateItem = null;
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                
+                if (item === draggedTemplateItem) return;
+                
+                // LIVE REORDERING
+                const container = document.getElementById('fieldBuilder');
+                const allItems = Array.from(container.querySelectorAll('.field-builder-item'));
+                const draggedIndex = allItems.indexOf(draggedTemplateItem);
+                const targetIndex = allItems.indexOf(item);
+                
+                if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+                    const rect = item.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
                     
-                    if (input && document.activeElement !== input) {
-                        input.value = field.value;
-                        // Flash effect
-                        card.classList.remove('updated');
-                        void card.offsetWidth; // trigger reflow
-                        card.classList.add('updated');
+                    if (e.clientY < midpoint) {
+                        item.parentNode.insertBefore(draggedTemplateItem, item);
+                    } else {
+                        item.parentNode.insertBefore(draggedTemplateItem, item.nextSibling);
+                    }
+                }
+                
+                e.dataTransfer.dropEffect = 'move';
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
+        // ========== FULLSCREEN MODE ==========
+
+        function openFullscreen(btn) {
+            const card = btn.closest('.field-card');
+            currentFullscreenCard = card;
+            
+            const name = card.querySelector('.field-name').textContent.trim().split('\n')[0];
+            const hint = card.querySelector('.field-hint').textContent;
+            const textarea = card.querySelector('.field-value');
+            const value = textarea.value || '';
+            const isLocked = card.classList.contains('locked');
+            
+            document.getElementById('fullscreenFieldLabel').textContent = name;
+            document.getElementById('fullscreenHint').textContent = hint;
+            document.getElementById('fullscreenValue').value = value;
+            document.getElementById('fullscreenLockBtn').textContent = isLocked ? '🔒' : '🔓';
+            
+            const mainHeader = document.querySelector('.bento-header');
+            const headerHeight = mainHeader ? mainHeader.offsetHeight : 0;
+            const overlay = document.getElementById('fullscreenOverlay');
+            overlay.style.top = headerHeight + 'px';
+            overlay.style.height = `calc(100% - ${headerHeight}px)`;
+            
+            overlay.classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('fullscreenValue').focus();
+            }, 100);
+        }
+
+        function closeFullscreen() {
+            if (currentFullscreenCard) {
+                const fullscreenValue = document.getElementById('fullscreenValue').value;
+                const cardTextarea = currentFullscreenCard.querySelector('.field-value');
+                cardTextarea.value = fullscreenValue;
+                
+                autoResizeTextarea(cardTextarea);
+                updateDataIndicator(currentFullscreenCard);
+            }
+            
+            document.getElementById('fullscreenOverlay').classList.remove('active');
+            currentFullscreenCard = null;
+        }
+
+        function editFromFullscreen() {
+            if (!currentFullscreenCard) return;
+            
+            const fullscreenValue = document.getElementById('fullscreenValue').value;
+            const cardTextarea = currentFullscreenCard.querySelector('.field-value');
+            cardTextarea.value = fullscreenValue;
+            
+            document.getElementById('fullscreenOverlay').classList.remove('active');
+            
+            const nameEl = currentFullscreenCard.querySelector('.field-name');
+            const hintEl = currentFullscreenCard.querySelector('.field-hint');
+            
+            const nameText = nameEl.textContent.trim().split('\n')[0].replace('✓ Has Data', '').replace('⚠ Empty', '').trim();
+            const hintText = hintEl.textContent.trim();
+            
+            currentEditCard = currentFullscreenCard;
+            
+            document.getElementById('editFieldNameInput').value = nameText;
+            document.getElementById('editFieldHintInput').value = hintText;
+            document.getElementById('editFieldModal').classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('editFieldNameInput').focus();
+            }, 100);
+        }
+
+        function toggleFullscreenLock() {
+            if (!currentFullscreenCard) return;
+            
+            const isLocked = currentFullscreenCard.classList.toggle('locked');
+            const lockBtn = document.getElementById('fullscreenLockBtn');
+            lockBtn.textContent = isLocked ? '🔒' : '🔓';
+            
+            const cardLockBtn = currentFullscreenCard.querySelector('.icon-btn.lock');
+            if (cardLockBtn) cardLockBtn.textContent = isLocked ? '🔒' : '🔓';
+        }
+
+        async function deleteFromFullscreen() {
+            if (!currentFullscreenCard) return;
+            
+            const fieldName = currentFullscreenCard.querySelector('.field-name').textContent.trim();
+            
+            const confirmed = await customConfirm(
+                `Delete "${fieldName}"? This cannot be undone.`,
+                '🗑️ Delete Field',
+                'Delete',
+                'Cancel'
+            );
+            
+            if (confirmed) {
+                currentFullscreenCard.remove();
+                closeFullscreen();
+                showToast('✓', 'Field deleted');
+            }
+        }
+
+        // ========== UTILITIES ==========
+
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            const newHeight = Math.min(textarea.scrollHeight, 220);
+            textarea.style.height = newHeight + 'px';
+            
+            if (textarea.scrollHeight > 220) {
+                textarea.style.overflowY = 'auto';
+            } else {
+                textarea.style.overflowY = 'hidden';
+            }
+        }
+
+        function updateDataIndicator(card) {
+            const actionsColumn = card.querySelector('.field-actions-column');
+            const textarea = card.querySelector('.field-value');
+            const value = textarea ? textarea.value.trim() : '';
+            
+            const existingBadge = actionsColumn.querySelector('.field-status-badge');
+            if (existingBadge) existingBadge.remove();
+            
+            const badge = document.createElement('span');
+            badge.className = 'field-status-badge';
+            if (value && value !== 'Waiting for data...') {
+                badge.classList.add('has-content-indicator');
+                badge.textContent = '✓ Has Data';
+            } else {
+                badge.classList.add('empty-indicator');
+                badge.textContent = '⚠ Empty';
+            }
+            actionsColumn.appendChild(badge);
+        }
+
+        function showToast(icon, message) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastIcon.textContent = icon;
+            toastMessage.textContent = message;
+            
+            toast.classList.add('active');
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // ========== EXPORT FUNCTIONS ==========
+
+        function toggleExportMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('active');
+        }
+
+        function generateMarkdown() {
+            const fields = document.querySelectorAll('.field-card');
+            const timestamp = new Date().toLocaleString();
+            
+            let markdown = `# Bingo Notes Export\n\n`;
+            markdown += `**Date:** ${timestamp}\n\n`;
+            
+            if (templateManager.currentTemplate) {
+                markdown += `**Template:** ${templateManager.currentTemplate.name}\n\n`;
+            }
+            
+            markdown += `---\n\n`;
+            
+            fields.forEach(card => {
+                const nameEl = card.querySelector('.field-name');
+                const hintEl = card.querySelector('.field-hint');
+                const valueEl = card.querySelector('.field-value');
+                
+                if (nameEl && valueEl) {
+                    const name = nameEl.textContent.trim().split('\n')[0].replace('✓ Has Data', '').replace('⚠ Empty', '').trim();
+                    const hint = hintEl ? hintEl.textContent.trim() : '';
+                    const value = valueEl.value.trim();
+                    
+                    markdown += `## ${name}\n`;
+                    if (hint) {
+                        markdown += `*${hint}*\n\n`;
+                    }
+                    if (value) {
+                        markdown += `${value}\n\n`;
+                    } else {
+                        markdown += `*No data*\n\n`;
                     }
                 }
             });
-        }
-
-        // --- 5. UTILITIES (Audio) ---
-        function downsampleBuffer(buffer, sampleRate, outSampleRate) {
-            if (sampleRate == outSampleRate) return buffer;
-            if (sampleRate < outSampleRate) throw "downsampling rate show be smaller than original sample rate";
-            var sampleRateRatio = sampleRate / outSampleRate;
-            var newLength = Math.round(buffer.length / sampleRateRatio);
-            var result = new Float32Array(newLength);
-            var offsetResult = 0;
-            var offsetBuffer = 0;
-            while (offsetResult < result.length) {
-                var nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-                var accum = 0, count = 0;
-                for (var i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-                    accum += buffer[i]; count++;
-                }
-                result[offsetResult] = accum / count;
-                offsetResult++; offsetBuffer = nextOffsetBuffer;
-            }
-            return result;
-        }
-
-        function convertFloat32ToPCM16(buffer) {
-            var l = buffer.length;
-            var buf = new Int16Array(l);
-            while (l--) {
-                buf[l] = Math.min(1, buffer[l]) * 0x7FFF;
-            }
-            return buf.buffer;
-        }
-
-        function updateStatus(state) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const clearBtn = document.getElementById('clearBtn');
-
-            dot.className = 'status-dot';
             
-            if (state === 'listening') {
-                dot.classList.add('recording');
-                text.textContent = 'Listening...';
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                clearBtn.disabled = true; // Lock clear button
-            } else if (state === 'analyzing') {
-                dot.classList.add('analyzing');
-                text.textContent = 'Analyzing...';
-            } else {
-                dot.classList.add('ready');
-                text.textContent = 'Ready';
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                clearBtn.disabled = false;
+            return markdown;
+        }
+
+        function generateFilename() {
+            const date = new Date().toISOString().split('T')[0];
+            const templateName = templateManager.currentTemplate 
+                ? templateManager.currentTemplate.name.replace(/[^a-zA-Z0-9]/g, '_')
+                : 'notes';
+            return `Bingo_${templateName}_${date}.md`;
+        }
+
+        async function copyToClipboard(event) {
+            event.stopPropagation();
+            const markdown = generateMarkdown();
+            
+            try {
+                await navigator.clipboard.writeText(markdown);
+                showToast('✓', 'Copied to clipboard!');
+                document.getElementById('exportMenu').classList.remove('active');
+            } catch (err) {
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = markdown;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        showToast('✓', 'Copied to clipboard!');
+                        document.getElementById('exportMenu').classList.remove('active');
+                    } else {
+                        throw new Error('Copy command failed');
+                    }
+                } catch (fallbackErr) {
+                    console.error('Failed to copy:', fallbackErr);
+                    showToast('❌', 'Copy failed - try Download instead');
+                }
             }
         }
 
-        function showToast(icon, msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastIcon').textContent = icon;
-            document.getElementById('toastMessage').textContent = msg;
-            t.classList.add('active');
-            setTimeout(() => t.classList.remove('active'), 3000);
+        async function shareNote(event) {
+            event.stopPropagation();
+            const markdown = generateMarkdown();
+            const filename = generateFilename();
+            
+            if (!navigator.share) {
+                showToast('❌', 'Share not supported on this device');
+                return;
+            }
+            
+            try {
+                const blob = new Blob([markdown], { type: 'text/markdown' });
+                const file = new File([blob], filename, { type: 'text/markdown' });
+                
+                await navigator.share({
+                    title: 'Bingo Notes',
+                    text: 'Notes from Bingo',
+                    files: [file]
+                });
+                
+                document.getElementById('exportMenu').classList.remove('active');
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                    showToast('❌', 'Share failed');
+                }
+            }
         }
 
-        // --- 6. EVENT BINDINGS ---
-        document.getElementById('startBtn').onclick = startListening;
-        document.getElementById('stopBtn').onclick = stopListening;
-        
-        document.getElementById('clearBtn').onclick = () => {
-            if (confirm("Clear all data?")) {
-                currentTemplate.forEach(f => f.value = '');
-                document.getElementById('userNotesInput').value = '';
-                document.getElementById('transcriptText').textContent = "Waiting for audio...";
-                renderGrid();
-                fullTranscript = "";
-            }
-        };
+        function emailNote(event) {
+            event.stopPropagation();
+            const markdown = generateMarkdown();
+            const subject = 'Bingo Notes - ' + new Date().toLocaleDateString();
+            
+            const body = markdown.substring(0, 2000);
+            const truncated = markdown.length > 2000 ? '\n\n[Note: Content truncated. Download full version for complete notes.]' : '';
+            
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + truncated)}`;
+            
+            window.location.href = mailtoLink;
+            showToast('✉️', 'Opening email client...');
+            document.getElementById('exportMenu').classList.remove('active');
+        }
 
-        // User Notes Sync
-        document.getElementById('userNotesInput').addEventListener('input', () => {
-            clearTimeout(syncTimer);
-            syncTimer = setTimeout(syncFieldsToServer, 2000);
+        function downloadMarkdown(event) {
+            event.stopPropagation();
+            const markdown = generateMarkdown();
+            const filename = generateFilename();
+            
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('✓', 'Download started!');
+            document.getElementById('exportMenu').classList.remove('active');
+        }
+
+        // ========== EVENT LISTENERS ==========
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('field-value')) {
+                autoResizeTextarea(e.target);
+                const card = e.target.closest('.field-card');
+                if (card) updateDataIndicator(card);
+            }
         });
 
-        // Initialize
-        initUI();
+        document.addEventListener('click', function(e) {
+            const exportMenu = document.getElementById('exportMenu');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if (exportMenu && !saveBtn.contains(e.target)) {
+                exportMenu.classList.remove('active');
+            }
+        });
+
+        // ========== INITIALIZATION ==========
+        
+        // Store references to actual functions
+        const _useTemplate = useTemplate;
+        const _deleteTemplate = deleteTemplate;
+        const _editTemplate = editTemplate;
+        
+        // Make critical functions globally accessible for onclick handlers
+        window.useTemplate = function(id) {
+            _useTemplate(id);
+        };
+        
+        window.deleteTemplate = function(id) {
+            _deleteTemplate(id);
+        };
+        
+        window.editTemplate = function(id) {
+            _editTemplate(id);
+        };
+        
+        window.openSaveAsTemplate = openSaveAsTemplate;
+        window.closeSaveAsTemplate = closeSaveAsTemplate;
+        window.saveCurrentFieldsAsTemplate = saveCurrentFieldsAsTemplate;
+        window.updateCurrentTemplate = updateCurrentTemplate;
+        
+        // Library functions
+        window.switchTab = switchTab;
+        window.importFromLibrary = importFromLibrary;
+        window.showCategoryGrid = showCategoryGrid;
+        window.showCategoryTemplates = showCategoryTemplates;
+
+        window.addEventListener('load', () => {
+            populateTemplateSelector();
+            
+            if (!navigator.share) {
+                const shareMenuItem = document.getElementById('shareMenuItem');
+                if (shareMenuItem) shareMenuItem.style.display = 'none';
+            }
+            
+            console.log('%c📚 Template Management System Active!', 'color: #667eea; font-size: 14px; font-weight: bold;');
+            console.log(`%c✓ ${templateManager.templates.length} templates loaded`, 'color: #48bb78; font-size: 12px;');
+        });
+
+        // Demo status changes (keep existing demo functionality)
+        document.getElementById('startBtn').addEventListener('click', function() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const transcript = document.getElementById('transcriptText');
+            
+            dot.className = 'status-dot recording';
+            text.textContent = 'Listening...';
+            transcript.textContent = 'Demo: This is a simulated transcript...';
+            
+            this.disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', function() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            dot.className = 'status-dot ready';
+            text.textContent = 'Ready';
+            
+            this.disabled = true;
+            document.getElementById('startBtn').disabled = false;
+        });
+
+        // ========== NOTES MANAGEMENT SYSTEM ==========
+        
+        class NotesManager {
+            constructor() {
+                this.notes = this.loadNotes();
+                this.currentNoteId = null;
+                this.autoSaveInterval = null;
+            }
+
+            loadNotes() {
+                const stored = localStorage.getItem('bingoNotes');
+                if (stored) {
+                    try {
+                        const notes = JSON.parse(stored);
+                        
+                        // Template name to category mapping
+                        const templateCategoryMap = {
+                            'Franchise Evaluation': 'Business',
+                            'Sales Call': 'Business',
+                            'Business Meeting': 'Business',
+                            'Home Inspection': 'Real Estate',
+                            'Property Viewing': 'Real Estate',
+                            'Legal Client Meeting': 'Legal',
+                            'Deposition Notes': 'Legal',
+                            'Medical Consultation': 'Medical',
+                            'Patient Intake': 'Medical',
+                            'Lecture Notes - General': 'Student',
+                            'Lecture Notes - STEM': 'Student',
+                            'Lecture Notes - Humanities': 'Student',
+                            'Study Group Session': 'Student',
+                            'Interview Notes': 'Journalism',
+                            'Story Research': 'Journalism',
+                            'Press Conference': 'Journalism',
+                            'Grocery Shopping List': 'Planning',
+                            'Vacation Planning': 'Planning',
+                            'Event Planning': 'Planning',
+                            'Weekly Meal Plan': 'Planning',
+                            'Project Planning': 'Planning'
+                        };
+                        
+                        // Migration: Fix categories for all notes
+                        let needsSave = false;
+                        notes.forEach(note => {
+                            // If no category or wrong category, look up from template
+                            if (!note.category || note.category === 'Uncategorized' || note.category === note.template) {
+                                const correctCategory = templateCategoryMap[note.template];
+                                if (correctCategory) {
+                                    note.category = correctCategory;
+                                    needsSave = true;
+                                    console.log(`✓ Fixed: "${note.template}" → category "${correctCategory}"`);
+                                } else if (!note.category) {
+                                    note.category = 'Uncategorized';
+                                    needsSave = true;
+                                }
+                            }
+                        });
+                        
+                        if (needsSave) {
+                            console.log('✓ Migrated', notes.length, 'notes to fix categories');
+                            localStorage.setItem('bingoNotes', JSON.stringify(notes));
+                        }
+                        
+                        return notes;
+                    } catch (e) {
+                        console.error('Failed to load notes:', e);
+                    }
+                }
+                return [];
+            }
+
+            saveNotes() {
+                localStorage.setItem('bingoNotes', JSON.stringify(this.notes));
+            }
+
+            createNote(title = 'Untitled Note', category = '') {
+                // If no category provided, try to use template's category
+                let noteCategory = category;
+                if (!noteCategory && templateManager.currentTemplate) {
+                    noteCategory = templateManager.currentTemplate.category || 'Uncategorized';
+                } else if (!noteCategory) {
+                    noteCategory = 'Uncategorized';
+                }
+                
+                const note = {
+                    id: 'note-' + Date.now(),
+                    title: title,
+                    category: noteCategory,
+                    template: templateManager.currentTemplate ? templateManager.currentTemplate.name : 'No template',
+                    templateId: templateManager.currentTemplate ? templateManager.currentTemplate.id : null,
+                    fields: this.captureCurrentFields(),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    status: 'draft'
+                };
+                this.notes.push(note);
+                this.saveNotes();
+                return note;
+            }
+
+            captureCurrentFields() {
+                const fieldCards = document.querySelectorAll('.field-card');
+                const fields = [];
+                
+                fieldCards.forEach(card => {
+                    const nameEl = card.querySelector('.field-name');
+                    const hintEl = card.querySelector('.field-hint');
+                    const valueEl = card.querySelector('.field-value');
+                    
+                    if (nameEl) {
+                        const name = nameEl.textContent.trim()
+                            .split('\n')[0]
+                            .replace('✓ Has Data', '')
+                            .replace('⚠ Empty', '')
+                            .trim();
+                        const hint = hintEl ? hintEl.textContent.trim() : '';
+                        const value = valueEl ? valueEl.value : '';
+                        
+                        fields.push({ name, hint, value });
+                    }
+                });
+                
+                return fields;
+            }
+
+            updateNote(id, updates) {
+                const index = this.notes.findIndex(n => n.id === id);
+                if (index !== -1) {
+                    this.notes[index] = { 
+                        ...this.notes[index], 
+                        ...updates,
+                        updatedAt: new Date().toISOString()
+                    };
+                    this.saveNotes();
+                    return this.notes[index];
+                }
+                return null;
+            }
+
+            deleteNote(id) {
+                this.notes = this.notes.filter(n => n.id !== id);
+                this.saveNotes();
+            }
+
+            getNote(id) {
+                return this.notes.find(n => n.id === id);
+            }
+
+            loadNoteIntoFields(noteId) {
+                const note = this.getNote(noteId);
+                if (!note) return;
+                
+                this.currentNoteId = noteId;
+                
+                // Clear current fields
+                document.getElementById('fieldGrid').innerHTML = '';
+                
+                // Load note's fields
+                note.fields.forEach(field => {
+                    createFieldCard(field.name, field.hint, field.value);
+                });
+                
+                // Update template selector if template exists
+                if (note.templateId) {
+                    const template = templateManager.getTemplate(note.templateId);
+                    if (template) {
+                        templateManager.currentTemplate = template;
+                    }
+                }
+                
+                // Show current note indicator
+                this.updateNoteIndicator(note);
+                
+                // Reset toggle button to match current state (fields are expanded by default)
+                resetToggleButton();
+                
+                showToast('✓', `Loaded: ${note.title}`);
+            }
+
+            updateNoteIndicator(note) {
+                const indicator = document.getElementById('currentNoteInfo');
+                const titleEl = document.getElementById('currentNoteTitle');
+                const metaEl = document.getElementById('currentNoteMeta');
+                
+                if (note) {
+                    // Header format: Name on top line, last saved on bottom line
+                    titleEl.textContent = note.title;
+                    const updatedDate = new Date(note.updatedAt).toLocaleString();
+                    metaEl.textContent = `Last saved: ${updatedDate}`;
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            }
+
+            startAutoSave() {
+                if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+                this.autoSaveInterval = setInterval(() => {
+                    if (this.currentNoteId) {
+                        this.autoSaveCurrentNote();
+                    }
+                }, 30000); // Auto-save every 30 seconds
+            }
+
+            autoSaveCurrentNote() {
+                if (!this.currentNoteId) return;
+                
+                const fields = this.captureCurrentFields();
+                this.updateNote(this.currentNoteId, { fields });
+                
+                const note = this.getNote(this.currentNoteId);
+                if (note) this.updateNoteIndicator(note);
+            }
+
+            duplicateNote(id) {
+                const original = this.getNote(id);
+                if (!original) return null;
+                
+                const duplicate = {
+                    ...original,
+                    id: 'note-' + Date.now(),
+                    title: original.title + ' (Copy)',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                this.notes.push(duplicate);
+                this.saveNotes();
+                return duplicate;
+            }
+        }
+
+        const notesManager = new NotesManager();
+
+        // Notes UI Functions
+        function openNotesLibrary() {
+            renderNotesLibrary();
+            document.getElementById('notesLibraryModal').classList.add('active');
+        }
+
+        function closeNotesLibrary(event) {
+            if (!event || event.target.id === 'notesLibraryModal') {
+                document.getElementById('notesLibraryModal').classList.remove('active');
+            }
+        }
+
+        function renderNotesLibrary() {
+            const container = document.getElementById('notesContainer');
+            const notes = notesManager.notes;
+            
+            if (notes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <div class="empty-state-title">No notes yet</div>
+                        <div class="empty-state-desc">Start a new note to begin capturing your ideas</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const sortedNotes = [...notes].sort((a, b) => 
+                new Date(b.updatedAt) - new Date(a.updatedAt)
+            );
+            
+            const cardsHtml = sortedNotes.map(note => {
+                const updatedDate = new Date(note.updatedAt).toLocaleDateString();
+                const preview = note.fields.map(f => f.value).filter(v => v).join(' ').substring(0, 100);
+                const isActive = note.id === notesManager.currentNoteId;
+                const category = note.category || 'Uncategorized';
+                
+                return `
+                    <div class="note-card ${isActive ? 'active' : ''}" data-note-id="${note.id}" onclick="loadNote('${note.id}')">
+                        <div class="note-card-header">
+                            <div class="note-title" title="${note.title}">${note.title}</div>
+                            <button class="icon-btn" onclick="event.stopPropagation(); editNoteName('${note.id}')" title="Edit note" style="font-size: 1.2em;">✏️</button>
+                        </div>
+                        <div class="note-template">📁 ${category}${note.template && note.template !== 'No template' ? ' • 📋 ' + note.template : ''}</div>
+                        <div class="note-meta">📅 ${updatedDate} • ${note.fields.length} fields</div>
+                        <div class="note-preview">${preview || 'No content yet...'}</div>
+                        <div class="note-actions" onclick="event.stopPropagation()">
+                            <button class="note-action-btn" onclick="loadNote('${note.id}')">✓ Open</button>
+                            <button class="note-action-btn" onclick="duplicateNote('${note.id}')">📋 Duplicate</button>
+                            <button class="note-action-btn" onclick="exportNote('${note.id}')">📥 Export</button>
+                            <button class="note-action-btn danger" onclick="deleteNote('${note.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `<div class="notes-grid">${cardsHtml}</div>`;
+        }
+
+        function filterNotes() {
+            const search = document.getElementById('notesSearch').value.toLowerCase();
+            const filter = document.getElementById('notesFilter').value;
+            
+            console.log('Filter dropdown value:', filter);
+            console.log('Total notes:', notesManager.notes.length);
+            console.log('Note categories:', notesManager.notes.map(n => n.category || 'Uncategorized'));
+            
+            let filtered = notesManager.notes;
+            
+            if (search) {
+                filtered = filtered.filter(note => 
+                    note.title.toLowerCase().includes(search) ||
+                    note.fields.some(f => f.value.toLowerCase().includes(search))
+                );
+            }
+            
+            if (filter !== 'all') {
+                if (filter === 'recent') {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    filtered = filtered.filter(n => new Date(n.updatedAt) > weekAgo);
+                } else {
+                    // Filter by category
+                    filtered = filtered.filter(n => {
+                        const noteCategory = n.category || 'Uncategorized';
+                        console.log(`Comparing: "${noteCategory}" === "${filter}"`, noteCategory === filter);
+                        return noteCategory === filter;
+                    });
+                }
+            }
+            
+            console.log('Filtered notes count:', filtered.length);
+            
+            // Re-render with filtered notes
+            const container = document.getElementById('notesContainer');
+            const sortedNotes = [...filtered].sort((a, b) => 
+                new Date(b.updatedAt) - new Date(a.updatedAt)
+            );
+            
+            if (sortedNotes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <div class="empty-state-title">No notes found</div>
+                        <div class="empty-state-desc">Try a different search or filter</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const cardsHtml = sortedNotes.map(note => {
+                const updatedDate = new Date(note.updatedAt).toLocaleDateString();
+                const preview = note.fields.map(f => f.value).filter(v => v).join(' ').substring(0, 100);
+                const isActive = note.id === notesManager.currentNoteId;
+                const category = note.category || 'Uncategorized';
+                
+                return `
+                    <div class="note-card ${isActive ? 'active' : ''}" data-note-id="${note.id}" onclick="loadNote('${note.id}')">
+                        <div class="note-card-header">
+                            <div class="note-title" title="${note.title}">${note.title}</div>
+                            <button class="icon-btn" onclick="event.stopPropagation(); editNoteName('${note.id}')" title="Edit note" style="font-size: 1.2em;">✏️</button>
+                        </div>
+                        <div class="note-template">📁 ${category}${note.template && note.template !== 'No template' ? ' • 📋 ' + note.template : ''}</div>
+                        <div class="note-meta">📅 ${updatedDate} • ${note.fields.length} fields</div>
+                        <div class="note-preview">${preview || 'No content yet...'}</div>
+                        <div class="note-actions" onclick="event.stopPropagation()">
+                            <button class="note-action-btn" onclick="loadNote('${note.id}')">✓ Open</button>
+                            <button class="note-action-btn" onclick="duplicateNote('${note.id}')">📋 Duplicate</button>
+                            <button class="note-action-btn" onclick="exportNote('${note.id}')">📥 Export</button>
+                            <button class="note-action-btn danger" onclick="deleteNote('${note.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `<div class="notes-grid">${cardsHtml}</div>`;
+        }
+
+        function startNewNote() {
+            // Clear current note to force new creation
+            notesManager.currentNoteId = null;
+            notesManager.updateNoteIndicator(null);
+            
+            // Clear all fields
+            document.getElementById('fieldGrid').innerHTML = '';
+            
+            // Reset toggle button
+            resetToggleButton();
+            
+            // Open modal for new note title
+            openSaveNoteTitleModal();
+        }
+
+        function saveCurrentNote() {
+            console.log('Save Note clicked!');
+            console.log('Current note ID:', notesManager.currentNoteId);
+            
+            if (!notesManager.currentNoteId) {
+                // Show custom modal for title instead of prompt
+                openSaveNoteTitleModal();
+                return;
+            }
+            
+            console.log('Updating existing note');
+            const fields = notesManager.captureCurrentFields();
+            console.log('Captured fields:', fields);
+            const hasContent = fields.some(f => f.value.trim());
+            
+            notesManager.updateNote(notesManager.currentNoteId, {
+                fields,
+                status: hasContent ? 'complete' : 'draft'
+            });
+            
+            const note = notesManager.getNote(notesManager.currentNoteId);
+            if (note) {
+                notesManager.updateNoteIndicator(note);
+                console.log('Note updated:', note);
+                showToast('✓', `Saved: ${note.title}`);
+            }
+        }
+
+        function openSaveNoteTitleModal() {
+            document.getElementById('saveNoteTitleInput').value = 'Untitled Note';
+            
+            const categorySelect = document.getElementById('saveNoteCategorySelect');
+            const customInput = document.getElementById('saveNoteCategoryCustomInput');
+            
+            // Pre-select category from current template
+            const defaultCategory = templateManager.currentTemplate 
+                ? (templateManager.currentTemplate.category || 'Uncategorized')
+                : 'Uncategorized';
+            
+            const optionExists = Array.from(categorySelect.options).some(opt => opt.value === defaultCategory);
+            
+            if (optionExists) {
+                categorySelect.value = defaultCategory;
+                customInput.style.display = 'none';
+            } else {
+                categorySelect.value = '__custom__';
+                customInput.value = defaultCategory;
+                customInput.style.display = 'block';
+            }
+            
+            document.getElementById('saveNoteTitleModal').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('saveNoteTitleInput').select();
+            }, 100);
+        }
+
+        function closeSaveNoteTitleModal(event) {
+            if (!event || event.target.id === 'saveNoteTitleModal') {
+                document.getElementById('saveNoteTitleModal').classList.remove('active');
+            }
+        }
+
+        function confirmSaveNote() {
+            const title = document.getElementById('saveNoteTitleInput').value.trim();
+            const categorySelect = document.getElementById('saveNoteCategorySelect');
+            const customInput = document.getElementById('saveNoteCategoryCustomInput');
+            
+            let category;
+            if (categorySelect.value === '__custom__') {
+                category = customInput.value.trim();
+                if (!category) {
+                    showToast('⚠️', 'Please enter a custom category name');
+                    return;
+                }
+            } else {
+                category = categorySelect.value;
+            }
+            
+            if (!title) {
+                showToast('⚠️', 'Please enter a note title');
+                return;
+            }
+            
+            console.log('Creating new note with title:', title, 'category:', category);
+            const note = notesManager.createNote(title, category);
+            notesManager.currentNoteId = note.id;
+            notesManager.updateNoteIndicator(note);
+            notesManager.startAutoSave();
+            console.log('Note created:', note);
+            
+            closeSaveNoteTitleModal();
+            showToast('✓', `Created and saved: ${title}`);
+        }
+
+        function loadNote(id) {
+            notesManager.loadNoteIntoFields(id);
+            notesManager.startAutoSave();
+            closeNotesLibrary();
+        }
+
+        async function duplicateNote(id) {
+            const duplicate = notesManager.duplicateNote(id);
+            if (duplicate) {
+                renderNotesLibrary();
+                showToast('✓', `Duplicated: ${duplicate.title}`);
+            }
+        }
+
+        function exportNote(id) {
+            const note = notesManager.getNote(id);
+            if (!note) return;
+            
+            const timestamp = new Date(note.updatedAt).toLocaleString();
+            let markdown = `# ${note.title}\n\n`;
+            markdown += `**Template:** ${note.template}\n`;
+            markdown += `**Last Updated:** ${timestamp}\n\n`;
+            markdown += `---\n\n`;
+            
+            note.fields.forEach(field => {
+                if (field.name) {
+                    markdown += `## ${field.name}\n`;
+                    if (field.hint) {
+                        markdown += `*${field.hint}*\n\n`;
+                    }
+                    if (field.value) {
+                        markdown += `${field.value}\n\n`;
+                    } else {
+                        markdown += `*No data*\n\n`;
+                    }
+                }
+            });
+            
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${note.title.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('✓', 'Note exported!');
+        }
+
+        async function deleteNote(id) {
+            const note = notesManager.getNote(id);
+            if (!note) return;
+            
+            const confirmed = await customConfirm(
+                `Delete "${note.title}"? This cannot be undone.`,
+                '🗑️ Delete Note',
+                'Delete',
+                'Cancel'
+            );
+            
+            if (confirmed) {
+                notesManager.deleteNote(id);
+                renderNotesLibrary();
+                
+                if (notesManager.currentNoteId === id) {
+                    notesManager.currentNoteId = null;
+                    notesManager.updateNoteIndicator(null);
+                }
+                
+                showToast('✓', 'Note deleted');
+            }
+        }
+
+        let editingNoteId = null;
+
+        function toggleCustomCategoryInput(select) {
+            const customInput = document.getElementById('editNoteCategoryCustomInput');
+            if (select.value === '__custom__') {
+                customInput.style.display = 'block';
+                setTimeout(() => customInput.focus(), 100);
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+
+        function toggleSaveCustomCategoryInput(select) {
+            const customInput = document.getElementById('saveNoteCategoryCustomInput');
+            if (select.value === '__custom__') {
+                customInput.style.display = 'block';
+                setTimeout(() => customInput.focus(), 100);
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+
+        function editNoteName(id) {
+            const note = notesManager.getNote(id);
+            if (!note) return;
+            
+            editingNoteId = id;
+            document.getElementById('editNoteNameInput').value = note.title;
+            
+            const categorySelect = document.getElementById('editNoteCategorySelect');
+            const customInput = document.getElementById('editNoteCategoryCustomInput');
+            const noteCategory = note.category || 'Uncategorized';
+            
+            // Check if category exists in dropdown
+            const optionExists = Array.from(categorySelect.options).some(opt => opt.value === noteCategory);
+            
+            if (optionExists) {
+                categorySelect.value = noteCategory;
+                customInput.style.display = 'none';
+            } else {
+                // Custom category
+                categorySelect.value = '__custom__';
+                customInput.value = noteCategory;
+                customInput.style.display = 'block';
+            }
+            
+            document.getElementById('editNoteNameModal').classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('editNoteNameInput').select();
+            }, 100);
+        }
+
+        function closeEditNoteNameModal(event) {
+            if (!event || event.target.id === 'editNoteNameModal') {
+                document.getElementById('editNoteNameModal').classList.remove('active');
+                editingNoteId = null;
+            }
+        }
+
+        function confirmEditNoteName() {
+            if (!editingNoteId) return;
+            
+            const newTitle = document.getElementById('editNoteNameInput').value.trim();
+            const categorySelect = document.getElementById('editNoteCategorySelect');
+            const customInput = document.getElementById('editNoteCategoryCustomInput');
+            
+            let newCategory;
+            if (categorySelect.value === '__custom__') {
+                newCategory = customInput.value.trim();
+                if (!newCategory) {
+                    showToast('⚠️', 'Please enter a custom category name');
+                    return;
+                }
+            } else {
+                newCategory = categorySelect.value;
+            }
+            
+            if (!newTitle) {
+                showToast('⚠️', 'Please enter a note title');
+                return;
+            }
+            
+            notesManager.updateNote(editingNoteId, { 
+                title: newTitle,
+                category: newCategory
+            });
+            
+            // Update indicator if this is the current note
+            if (notesManager.currentNoteId === editingNoteId) {
+                const note = notesManager.getNote(editingNoteId);
+                if (note) notesManager.updateNoteIndicator(note);
+            }
+            
+            renderNotesLibrary();
+            closeEditNoteNameModal();
+            showToast('✓', 'Note updated');
+        }
+
+        // Make functions globally accessible
+        window.openNotesLibrary = openNotesLibrary;
+        window.closeNotesLibrary = closeNotesLibrary;
+        window.startNewNote = startNewNote;
+        window.saveCurrentNote = saveCurrentNote;
+        window.loadNote = loadNote;
+        window.duplicateNote = duplicateNote;
+        window.exportNote = exportNote;
+        window.deleteNote = deleteNote;
+        window.filterNotes = filterNotes;
+        window.editNoteName = editNoteName;
+
 
     </script>
 </body>
