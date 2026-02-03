@@ -2,8 +2,8 @@ name: Build Bingo Notes APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, Bento-Branch] # Trigger on push to either branch
+  workflow_dispatch:               # This enables the manual "Run" button
 
 jobs:
   build:
