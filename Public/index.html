@@ -3394,6 +3394,9 @@
 
         function initializeTouchDrag(card) {
             const dragHandle = card.querySelector('.drag-handle');
+            let cloneCard = null;
+            let cardOriginalRect = null;
+            let scrollContainer = null;
             
             dragHandle.addEventListener('touchstart', (e) => {
                 const touch = e.touches[0];
@@ -3404,7 +3407,30 @@
                 longPressTimer = setTimeout(() => {
                     isDragging = true;
                     touchDraggedCard = card;
-                    card.classList.add('dragging');
+                    
+                    // Get scroll container
+                    scrollContainer = document.querySelector('.bento-content');
+                    
+                    // Store original position
+                    cardOriginalRect = card.getBoundingClientRect();
+                    
+                    // Create floating clone
+                    cloneCard = card.cloneNode(true);
+                    cloneCard.style.position = 'fixed';
+                    cloneCard.style.left = cardOriginalRect.left + 'px';
+                    cloneCard.style.top = cardOriginalRect.top + 'px';
+                    cloneCard.style.width = cardOriginalRect.width + 'px';
+                    cloneCard.style.zIndex = '1000';
+                    cloneCard.style.opacity = '0.9';
+                    cloneCard.style.pointerEvents = 'none';
+                    cloneCard.style.transform = 'scale(1.05)';
+                    cloneCard.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+                    cloneCard.classList.add('dragging');
+                    document.body.appendChild(cloneCard);
+                    
+                    // Make original card invisible (placeholder)
+                    card.style.opacity = '0.3';
+                    
                     navigator.vibrate && navigator.vibrate(50); // Haptic feedback
                     
                     // Prevent text selection during drag
@@ -3425,14 +3451,26 @@
                     return;
                 }
                 
-                e.preventDefault(); // Prevent scrolling while dragging
-                
+                // DON'T prevent default - allow scrolling
                 const touch = e.touches[0];
+                
+                // Move the clone card with finger
+                if (cloneCard) {
+                    const offsetX = touch.clientX - touchStartX;
+                    const offsetY = touch.clientY - touchStartY;
+                    cloneCard.style.left = (cardOriginalRect.left + offsetX) + 'px';
+                    cloneCard.style.top = (cardOriginalRect.top + offsetY) + 'px';
+                }
+                
+                // Check what card is under the touch point
+                if (cloneCard) cloneCard.style.pointerEvents = 'none';
                 const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (cloneCard) cloneCard.style.pointerEvents = 'none';
+                
                 const targetCard = elementAtPoint?.closest('.field-card');
                 
-                if (targetCard && targetCard !== touchDraggedCard) {
-                    // LIVE REORDERING
+                if (targetCard && targetCard !== touchDraggedCard && targetCard.style.opacity !== '0.3') {
+                    // Reorder in DOM (move placeholder)
                     const grid = document.getElementById('fieldGrid');
                     const allCards = Array.from(grid.querySelectorAll('.field-card'));
                     const draggedIndex = allCards.indexOf(touchDraggedCard);
@@ -3452,13 +3490,23 @@
                 
                 // Update auto-scroll
                 updateAutoScroll(touch.clientY);
-            }, { passive: false });
+            }, { passive: true }); // passive: true allows scrolling
             
             dragHandle.addEventListener('touchend', (e) => {
                 clearTimeout(longPressTimer);
                 
                 if (isDragging) {
-                    touchDraggedCard?.classList.remove('dragging');
+                    // Remove clone
+                    if (cloneCard) {
+                        cloneCard.remove();
+                        cloneCard = null;
+                    }
+                    
+                    // Restore original card visibility
+                    if (touchDraggedCard) {
+                        touchDraggedCard.style.opacity = '';
+                    }
+                    
                     showToast('✓', 'Field reordered');
                     
                     // Re-enable text selection
@@ -3472,7 +3520,16 @@
             
             dragHandle.addEventListener('touchcancel', (e) => {
                 clearTimeout(longPressTimer);
-                touchDraggedCard?.classList.remove('dragging');
+                
+                if (cloneCard) {
+                    cloneCard.remove();
+                    cloneCard = null;
+                }
+                
+                if (touchDraggedCard) {
+                    touchDraggedCard.style.opacity = '';
+                }
+                
                 touchDraggedCard = null;
                 isDragging = false;
                 stopAutoScroll();
