@@ -107,6 +107,150 @@
             z-index: 100;
             background: white;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        /* Collapsed header state */
+        .bento-header.collapsed {
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        .bento-header.collapsed .header-top,
+        .bento-header.collapsed .template-bar,
+        .bento-header.collapsed .live-transcript,
+        .bento-header.collapsed .control-buttons,
+        .bento-header.collapsed .field-management {
+            display: none;
+        }
+        
+        /* Collapsed header bar (minimal top bar) */
+        .header-collapsed-bar {
+            display: none;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+        
+        .bento-header.collapsed .header-collapsed-bar {
+            display: flex;
+        }
+        
+        .header-collapsed-bar:active {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b4291 100%);
+        }
+        
+        .collapsed-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .collapsed-bar-icon {
+            font-size: 1.3em;
+        }
+        
+        .collapsed-bar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .collapsed-bar-note {
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .collapsed-bar-template {
+            font-size: 0.7em;
+            opacity: 0.85;
+        }
+        
+        .collapsed-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .collapsed-bar-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        
+        .collapsed-bar-status .status-dot {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .collapsed-bar-expand {
+            font-size: 1.3em;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+        }
+        
+        /* Collapsed header state */
+        .bento-header.collapsed .template-bar,
+        .bento-header.collapsed .live-transcript,
+        .bento-header.collapsed .control-buttons,
+        .bento-header.collapsed .field-management {
+            display: none;
+        }
+        
+        .bento-header.collapsed .header-top {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        
+        .bento-header.collapsed .logo-icon {
+            font-size: 1.3em;
+        }
+        
+        .bento-header.collapsed .logo-text h1 {
+            font-size: 1em;
+        }
+        
+        .bento-header.collapsed .logo-text .tagline {
+            display: none;
+        }
+        
+        /* Toggle indicator */
+        .header-toggle {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85em;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .header-toggle:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .bento-header.collapsed .header-toggle {
+            display: flex;
+        }
+        
+        .header-toggle-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s;
+        }
+        
+        .bento-header.collapsed .header-toggle-icon {
+            transform: rotate(180deg);
         }
 
         /* Top Bar with Logo & Settings */
@@ -565,68 +709,92 @@
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            /* Compact header in landscape */
+            /* Even more compact header in landscape */
             .header-top {
-                padding: 8px 16px;
+                padding: 6px 12px;
             }
             
             .logo-icon {
-                font-size: 1.4em;
+                font-size: 1.2em;
             }
             
-            .current-note-indicator {
-                font-size: 0.8em;
-                padding: 6px 12px;
+            .current-note-header {
+                font-size: 0.75em;
             }
             
             .header-status {
-                font-size: 0.8em;
-                padding: 6px 12px;
+                font-size: 0.75em;
+                padding: 4px 8px;
+            }
+            
+            /* When collapsed, make it super minimal */
+            .bento-header.collapsed .header-top {
+                padding: 4px 12px;
+            }
+            
+            .bento-header.collapsed .logo-icon {
+                font-size: 1em;
+            }
+            
+            .bento-header.collapsed .current-note-header {
+                font-size: 0.7em;
             }
             
             .template-bar {
-                padding: 8px 16px;
+                padding: 6px 12px;
             }
             
             .template-select, .template-btn {
-                padding: 8px 10px;
-                font-size: 0.85em;
+                padding: 6px 8px;
+                font-size: 0.8em;
             }
             
             .live-transcript {
-                padding: 8px 16px;
-                max-height: 50px;
+                padding: 6px 12px;
+                max-height: 40px;
+            }
+            
+            .transcript-label {
+                font-size: 0.6em;
             }
             
             .transcript-text {
-                font-size: 0.8em;
+                font-size: 0.75em;
             }
             
             .control-buttons {
-                padding: 8px 16px;
-                gap: 6px;
+                padding: 6px 12px;
+                gap: 4px;
             }
             
             .btn {
-                padding: 8px 6px;
-                font-size: 0.85em;
-            }
-            
-            .field-management {
-                padding: 6px 16px 8px;
-            }
-            
-            .field-mgmt-btn {
-                padding: 6px;
+                padding: 6px 4px;
                 font-size: 0.8em;
             }
             
+            .field-management {
+                padding: 4px 12px 6px;
+            }
+            
+            .field-mgmt-btn {
+                padding: 4px;
+                font-size: 0.75em;
+            }
+            
             .bento-content {
-                padding: 12px;
+                padding: 8px;
             }
             
             .field-card {
-                padding: 12px;
+                padding: 10px;
+            }
+            
+            .field-name {
+                font-size: 0.95em;
+            }
+            
+            .field-hint {
+                font-size: 0.75em;
             }
         }
 
@@ -1262,10 +1430,28 @@
 <body>
     <div class="bento-container">
         <!-- ========== STICKY HEADER ========== -->
-        <div class="bento-header">
+        <div class="bento-header" id="bentoHeader">
+            <!-- Collapsed Header Bar (shown when collapsed) -->
+            <div class="header-collapsed-bar" onclick="toggleHeader()">
+                <div class="collapsed-bar-left">
+                    <div class="collapsed-bar-icon">🎙️</div>
+                    <div class="collapsed-bar-info">
+                        <div class="collapsed-bar-note" id="collapsedNoteName">No active note</div>
+                        <div class="collapsed-bar-template" id="collapsedTemplate">Select a template</div>
+                    </div>
+                </div>
+                <div class="collapsed-bar-right">
+                    <div class="collapsed-bar-status">
+                        <div class="status-dot ready" id="collapsedStatusDot"></div>
+                        <span id="collapsedStatusText">Ready</span>
+                    </div>
+                    <div class="collapsed-bar-expand">▼</div>
+                </div>
+            </div>
+            
             <!-- Top Bar -->
             <div class="header-top">
-                <div class="logo-section">
+                <div class="logo-section" onclick="toggleHeader()" style="cursor: pointer;">
                     <div class="logo-icon">🎙️</div>
                 </div>
                 
@@ -1275,10 +1461,18 @@
                     <div class="current-note-saved" id="currentNoteMeta"></div>
                 </div>
                 
-                <!-- Status Indicator (moved from banner) -->
-                <div class="header-status">
-                    <div class="status-dot ready" id="statusDot"></div>
-                    <div class="status-text" id="statusText">Ready</div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- Toggle indicator (only shows when collapsed) -->
+                    <div class="header-toggle">
+                        <span>Tap to expand</span>
+                        <span class="header-toggle-icon">▼</span>
+                    </div>
+                    
+                    <!-- Status Indicator (moved from banner) -->
+                    <div class="header-status">
+                        <div class="status-dot ready" id="statusDot"></div>
+                        <div class="status-text" id="statusText">Ready</div>
+                    </div>
                 </div>
             </div>
 
@@ -2235,6 +2429,11 @@
             
             // Reset toggle button to match current state (fields are expanded by default)
             resetToggleButton();
+            
+            // Update collapsed header info
+            if (headerCollapsed) {
+                updateCollapsedHeaderInfo();
+            }
             
             showToast('✓', `Loaded: ${template.name}`);
         }
@@ -3382,6 +3581,122 @@
         }
 
         // ========== UTILITIES ==========
+        
+        // ========== HEADER COLLAPSE/EXPAND ==========
+        
+        let headerCollapsed = false;
+        
+        function toggleHeader() {
+            const header = document.getElementById('bentoHeader');
+            headerCollapsed = !headerCollapsed;
+            
+            if (headerCollapsed) {
+                header.classList.add('collapsed');
+                updateCollapsedHeaderInfo();
+            } else {
+                header.classList.remove('collapsed');
+            }
+        }
+        
+        function collapseHeader() {
+            const header = document.getElementById('bentoHeader');
+            if (!headerCollapsed) {
+                headerCollapsed = true;
+                header.classList.add('collapsed');
+                updateCollapsedHeaderInfo();
+            }
+        }
+        
+        function expandHeader() {
+            const header = document.getElementById('bentoHeader');
+            if (headerCollapsed) {
+                headerCollapsed = false;
+                header.classList.remove('collapsed');
+            }
+        }
+        
+        function updateCollapsedHeaderInfo() {
+            // Update note name
+            const currentNoteName = document.getElementById('currentNoteTitle')?.textContent || 'No active note';
+            document.getElementById('collapsedNoteName').textContent = currentNoteName;
+            
+            // Update template name
+            const templateSelect = document.getElementById('templateSelect');
+            const selectedOption = templateSelect?.options[templateSelect.selectedIndex];
+            const templateName = selectedOption?.textContent || 'No template';
+            document.getElementById('collapsedTemplate').textContent = templateName;
+            
+            // Update status
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            document.getElementById('collapsedStatusDot').className = statusDot.className;
+            document.getElementById('collapsedStatusText').textContent = statusText.textContent;
+        }
+        
+        // Auto-collapse header when typing in a field
+        function setupAutoCollapseOnFocus() {
+            document.addEventListener('focusin', (e) => {
+                if (e.target.classList.contains('field-value')) {
+                    // Delay slightly to allow smooth transition
+                    setTimeout(() => collapseHeader(), 100);
+                }
+            });
+        }
+        
+        // Auto-collapse in landscape mode
+        function handleOrientationChange() {
+            if (window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches) {
+                collapseHeader();
+            }
+        }
+        
+        
+        // Header collapse/expand functionality
+        function toggleHeader() {
+            const header = document.querySelector('.bento-header');
+            header.classList.toggle('collapsed');
+            
+            // Save state
+            const isCollapsed = header.classList.contains('collapsed');
+            localStorage.setItem('headerCollapsed', isCollapsed);
+        }
+        
+        function collapseHeader() {
+            const header = document.querySelector('.bento-header');
+            header.classList.add('collapsed');
+            localStorage.setItem('headerCollapsed', true);
+        }
+        
+        function expandHeader() {
+            const header = document.querySelector('.bento-header');
+            header.classList.remove('collapsed');
+            localStorage.setItem('headerCollapsed', false);
+        }
+        
+        // Auto-collapse header when typing in landscape or when keyboard appears
+        function setupAutoCollapseHeader() {
+            // Delegate focus event to parent
+            const fieldGrid = document.getElementById('fieldGrid');
+            if (!fieldGrid) return;
+            
+            fieldGrid.addEventListener('focusin', (e) => {
+                if (e.target.classList.contains('field-value')) {
+                    // In landscape mode, auto-collapse
+                    if (window.innerHeight < 500) {
+                        collapseHeader();
+                    }
+                    // In portrait, collapse if small screen
+                    else if (window.innerHeight < 650) {
+                        // Small delay to let keyboard appear
+                        setTimeout(() => {
+                            if (window.innerHeight < 650) {
+                                collapseHeader();
+                            }
+                        }, 300);
+                    }
+                }
+            });
+        }
 
         function autoResizeTextarea(textarea) {
             textarea.style.height = 'auto';
@@ -3640,6 +3955,20 @@
                 const shareMenuItem = document.getElementById('shareMenuItem');
                 if (shareMenuItem) shareMenuItem.style.display = 'none';
             }
+            
+            // Initialize auto-collapse features
+            setupAutoCollapseOnFocus();
+            
+            // Auto-collapse in landscape on load
+            handleOrientationChange();
+            
+            // Listen for orientation changes
+            window.addEventListener('orientationchange', () => {
+                setTimeout(handleOrientationChange, 100);
+            });
+            
+            // Also listen for resize (for desktop testing)
+            window.addEventListener('resize', handleOrientationChange);
             
             console.log('%c📚 Template Management System Active!', 'color: #667eea; font-size: 14px; font-weight: bold;');
             console.log(`%c✓ ${templateManager.templates.length} templates loaded`, 'color: #48bb78; font-size: 12px;');
