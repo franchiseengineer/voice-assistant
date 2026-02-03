@@ -564,6 +564,70 @@
             .field-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            /* Compact header in landscape */
+            .header-top {
+                padding: 8px 16px;
+            }
+            
+            .logo-icon {
+                font-size: 1.4em;
+            }
+            
+            .current-note-indicator {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
+            
+            .header-status {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
+            
+            .template-bar {
+                padding: 8px 16px;
+            }
+            
+            .template-select, .template-btn {
+                padding: 8px 10px;
+                font-size: 0.85em;
+            }
+            
+            .live-transcript {
+                padding: 8px 16px;
+                max-height: 50px;
+            }
+            
+            .transcript-text {
+                font-size: 0.8em;
+            }
+            
+            .control-buttons {
+                padding: 8px 16px;
+                gap: 6px;
+            }
+            
+            .btn {
+                padding: 8px 6px;
+                font-size: 0.85em;
+            }
+            
+            .field-management {
+                padding: 6px 16px 8px;
+            }
+            
+            .field-mgmt-btn {
+                padding: 6px;
+                font-size: 0.8em;
+            }
+            
+            .bento-content {
+                padding: 12px;
+            }
+            
+            .field-card {
+                padding: 12px;
+            }
         }
 
         @media (min-width: 600px) and (orientation: portrait) {
@@ -2062,24 +2126,34 @@
             }
 
             exportTemplate(id) {
-                const template = this.getTemplate(id);
-                if (!template) return null;
-                
-                const exportData = {
-                    ...template,
-                    exportedAt: new Date().toISOString(),
-                    version: '1.0'
-                };
-                
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `bingo-template-${template.id}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                
-                showToast('✓', 'Template exported!');
+                try {
+                    const template = this.getTemplate(id);
+                    if (!template) {
+                        showToast('❌', 'Template not found');
+                        return null;
+                    }
+                    
+                    const exportData = {
+                        ...template,
+                        exportedAt: new Date().toISOString(),
+                        version: '1.0'
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bingo-template-${template.id}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    showToast('✓', 'Template exported!');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    showToast('❌', 'Export failed: ' + error.message);
+                }
             }
 
             importTemplate(jsonData) {
@@ -2197,6 +2271,7 @@
             
             // Initialize drag and drop for this card
             initializeDragAndDrop(card);
+            initializeTouchDrag(card);
             
             // Auto-resize textarea
             const textarea = card.querySelector('.field-value');
@@ -2277,7 +2352,7 @@
                         <div class="template-item-actions">
                             <button class="template-item-btn" onclick="useTemplate('${template.id.replace(/'/g, "\\'")}')">✓ Use</button>
                             <button class="template-item-btn" onclick="editTemplate('${template.id.replace(/'/g, "\\'")}')">✏️ Edit</button>
-                            <button class="template-item-btn" onclick="templateManager.exportTemplate('${template.id.replace(/'/g, "\\'")}')">📥 Export</button>
+                            <button class="template-item-btn" onclick="event.stopPropagation(); templateManager.exportTemplate('${template.id.replace(/'/g, "\\'")}'); return false;">📥 Export</button>
                             <button class="template-item-btn danger" onclick="deleteTemplate('${template.id.replace(/'/g, "\\'")}')">🗑️ Delete</button>
                         </div>
                     `;
@@ -3107,6 +3182,102 @@
             item.addEventListener('drop', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+            });
+        }
+
+        // ========== MOBILE TOUCH DRAG FOR FIELD CARDS ==========
+
+        let touchDraggedCard = null;
+        let longPressTimer = null;
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let isDragging = false;
+
+        function initializeTouchDrag(card) {
+            const dragHandle = card.querySelector('.drag-handle');
+            
+            dragHandle.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                
+                // Start long press timer
+                longPressTimer = setTimeout(() => {
+                    isDragging = true;
+                    touchDraggedCard = card;
+                    card.classList.add('dragging');
+                    navigator.vibrate && navigator.vibrate(50); // Haptic feedback
+                    
+                    // Prevent text selection during drag
+                    document.body.style.userSelect = 'none';
+                }, 500); // 500ms long press
+            }, { passive: false });
+            
+            dragHandle.addEventListener('touchmove', (e) => {
+                if (!isDragging) {
+                    // Cancel long press if finger moves too much before drag starts
+                    const touch = e.touches[0];
+                    const deltaX = Math.abs(touch.clientX - touchStartX);
+                    const deltaY = Math.abs(touch.clientY - touchStartY);
+                    
+                    if (deltaX > 10 || deltaY > 10) {
+                        clearTimeout(longPressTimer);
+                    }
+                    return;
+                }
+                
+                e.preventDefault(); // Prevent scrolling while dragging
+                
+                const touch = e.touches[0];
+                const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+                const targetCard = elementAtPoint?.closest('.field-card');
+                
+                if (targetCard && targetCard !== touchDraggedCard) {
+                    // LIVE REORDERING
+                    const grid = document.getElementById('fieldGrid');
+                    const allCards = Array.from(grid.querySelectorAll('.field-card'));
+                    const draggedIndex = allCards.indexOf(touchDraggedCard);
+                    const targetIndex = allCards.indexOf(targetCard);
+                    
+                    if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+                        const rect = targetCard.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+                        
+                        if (touch.clientY < midpoint) {
+                            targetCard.parentNode.insertBefore(touchDraggedCard, targetCard);
+                        } else {
+                            targetCard.parentNode.insertBefore(touchDraggedCard, targetCard.nextSibling);
+                        }
+                    }
+                }
+                
+                // Update auto-scroll
+                updateAutoScroll(touch.clientY);
+            }, { passive: false });
+            
+            dragHandle.addEventListener('touchend', (e) => {
+                clearTimeout(longPressTimer);
+                
+                if (isDragging) {
+                    touchDraggedCard?.classList.remove('dragging');
+                    showToast('✓', 'Field reordered');
+                    
+                    // Re-enable text selection
+                    document.body.style.userSelect = '';
+                }
+                
+                touchDraggedCard = null;
+                isDragging = false;
+                stopAutoScroll();
+            });
+            
+            dragHandle.addEventListener('touchcancel', (e) => {
+                clearTimeout(longPressTimer);
+                touchDraggedCard?.classList.remove('dragging');
+                touchDraggedCard = null;
+                isDragging = false;
+                stopAutoScroll();
+                document.body.style.userSelect = '';
             });
         }
 
